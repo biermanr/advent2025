@@ -26,14 +26,16 @@ pub fn part1(data_path: &Path) -> u32 {
             dial += dial_span;
         }
 
-        println!("{}", dial);
-
         if dial == 0 {
             num_zeros += 1;
         }
     }
 
     num_zeros
+}
+
+pub fn part2(data_path: &Path) -> u32 {
+    1
 }
 
 // Test the run function
@@ -72,5 +74,12 @@ L82";
         let (_d, _f, test_path) = create_test_file();
         let result = part1(&test_path);
         assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn test_part2() {
+        let (_d, _f, test_path) = create_test_file();
+        let result = part1(&test_path);
+        assert_eq!(result, 6);
     }
 }
