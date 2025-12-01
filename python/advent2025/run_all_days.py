@@ -23,7 +23,7 @@ def main():
         for part,func in enumerate(funcs):
             with timer():
                 result = func(f"{args.data}/day{day}.txt")
-                print(f"Day {day} part {part} result {result}", end=" ")
+                print(f"Day {day} part {part+1} result {result}", end=" ")
 
 if __name__ == "__main__":
     main()

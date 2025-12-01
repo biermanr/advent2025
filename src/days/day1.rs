@@ -35,7 +35,50 @@ pub fn part1(data_path: &Path) -> u32 {
 }
 
 pub fn part2(data_path: &Path) -> u32 {
-    1
+    let text = std::fs::read_to_string(data_path).unwrap();
+
+    let mut dial = 50;
+    let dial_min = 0;
+    let dial_max = 99;
+    let dial_span = (dial_max-dial_min+1) as u32;
+    let mut score: u32 = 0;
+
+    for line in text.lines() {
+        let mut sign: i32 = 1;
+        if let Some(direction) = line.chars().nth(0) {
+            if direction == 'L' {
+                sign = -1;
+            }
+        }
+
+        let mut magnitude: u32 = line.chars().skip(1).collect::<String>().parse().unwrap();
+
+
+        let full_spins = magnitude / dial_span;
+        score += full_spins;
+
+        magnitude = magnitude-full_spins*dial_span;
+        let offset = sign*(magnitude as i32);
+        
+
+        let mut new_dial = dial+offset;
+        if new_dial == 0 {
+            score += 1;
+        }
+        else if new_dial < 0 {
+            new_dial += dial_span as i32;
+            if dial > 0 {
+                score += 1;
+            }
+        }
+        else if new_dial >= dial_span as i32 {
+            score += 1;
+            new_dial = new_dial % (dial_span as i32);
+        }
+        dial = new_dial;
+    }
+
+    score
 }
 
 // Test the run function
@@ -79,7 +122,7 @@ L82";
     #[test]
     fn test_part2() {
         let (_d, _f, test_path) = create_test_file();
-        let result = part1(&test_path);
+        let result = part2(&test_path);
         assert_eq!(result, 6);
     }
 }
