@@ -1,54 +1,39 @@
-use std::cmp::max;
-use std::collections::HashMap;
 use std::path::Path;
 
 pub fn part1(data_path: &Path) -> u32 {
-    // Read entire file contents at once
+
     let text = std::fs::read_to_string(data_path).unwrap();
 
-    // Convert lines to numeric
-    let nums: Vec<Vec<i32>> = text
-        .lines()
-        .map(|l| l.split_whitespace().map(|n| n.parse().unwrap()).collect())
-        .collect();
+    let mut dial = 50;
+    let dial_min = 0;
+    let dial_max = 99;
+    let dial_span = dial_max-dial_min+1;
+    let mut num_zeros = 0;
 
-    // Collect the first and second value of each row into two sorted vectors
-    let mut v1: Vec<i32> = nums.iter().map(|ns| ns[0]).collect();
-    let mut v2: Vec<i32> = nums.iter().map(|ns| ns[1]).collect();
-    v1.sort();
-    v2.sort();
+    for line in text.lines() {
+        let mut sign = 1;
+        if let Some(direction) = line.chars().nth(0) {
+            if direction == 'L' {
+                sign = -1;
+            }
+        }
 
-    // Perform the difference and sum
-    let diff: i32 = v1
-        .iter()
-        .zip(v2.iter())
-        .map(|(l, r)| max(l - r, r - l))
-        .sum();
+        let magnitude: i32 = line.chars().skip(1).collect::<String>().parse().unwrap();
+        let offset = sign*magnitude;
 
-    diff.try_into().unwrap()
-}
+        dial = (dial+offset) % dial_span + dial_min; // TODO this is not general. Fails if dial_min != 0
+        if dial < 0 {
+            dial += dial_span;
+        }
 
-pub fn part2(data_path: &Path) -> u32 {
-    let text = std::fs::read_to_string(data_path).unwrap();
+        println!("{}", dial);
 
-    let nums: Vec<Vec<i32>> = text
-        .lines()
-        .map(|l| l.split_whitespace().map(|n| n.parse().unwrap()).collect())
-        .collect();
-
-    let v1: Vec<i32> = nums.iter().map(|ns| ns[0]).collect();
-    let v2: Vec<i32> = nums.iter().map(|ns| ns[1]).collect();
-
-    let mut v2_counts: HashMap<i32, i32> = HashMap::new();
-    for v in v2 {
-        *v2_counts.entry(v).or_insert(0) += 1;
+        if dial == 0 {
+            num_zeros += 1;
+        }
     }
 
-    let diff: i32 = v1
-        .iter()
-        .map(|v| *v2_counts.entry(*v).or_insert(0) * v)
-        .sum();
-    diff.try_into().unwrap()
+    num_zeros
 }
 
 // Test the run function
@@ -62,12 +47,16 @@ mod tests {
 
     fn create_test_file() -> (tempfile::TempDir, File, PathBuf) {
         let test_input = "\
-3   4
-4   3
-2   5
-1   3
-3   9
-3   3";
+L68
+L30
+R48
+L5
+R60
+L55
+L1
+L99
+R14
+L82";
 
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
@@ -82,13 +71,6 @@ mod tests {
     fn test_part1() {
         let (_d, _f, test_path) = create_test_file();
         let result = part1(&test_path);
-        assert_eq!(result, 11);
-    }
-
-    #[test]
-    fn test_part2() {
-        let (_d, _f, test_path) = create_test_file();
-        let result = part2(&test_path);
-        assert_eq!(result, 31);
+        assert_eq!(result, 3);
     }
 }
