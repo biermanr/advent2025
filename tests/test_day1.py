@@ -1,22 +1,26 @@
-from advent2025 import day1
+import advent2025
 import pytest
 
 @pytest.fixture
-def test_lists_path(tmp_path):
+def rotations_path(tmp_path):
     f = tmp_path / "input.txt"
     input_data = (
-        "3   4\n"
-        "4   3\n"
-        "2   5\n"
-        "1   3\n"
-        "3   9\n"
-        "3   3\n"
+        "L68\n"
+        "L30\n"
+        "R48\n"
+        "L5\n"
+        "R60\n"
+        "L55\n"
+        "L1\n"
+        "L99\n"
+        "R14\n"
+        "L82\n"
     )
     f.write_text(input_data)
     return f
 
-def test_py_day1_part1(test_lists_path):
-    assert day1.part1(test_lists_path) == 11
+def test_py_day1_part1(rotations_path):
+    assert advent2025.day1.part1(rotations_path) == 3
 
-def test_py_day1_part2(test_lists_path):
-    assert day1.part2(test_lists_path) == 31
+def test_py_day1_part2(rotations_path):
+    assert advent2025.day1.part2(rotations_path) == 6

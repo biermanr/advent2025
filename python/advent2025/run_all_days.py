@@ -1,9 +1,9 @@
-from advent2025 import advent2025
+import advent2025 as py_advent2025
+from advent2025 import advent2025 as rs_advent2025
 import argparse
 import time
 import contextlib
 
-# stolen from Henry https://github.com/henryiii/aoc2025/blob/main/python/problems.py
 @contextlib.contextmanager
 def timer():
     start = time.perf_counter()
@@ -16,14 +16,15 @@ def main():
     args = parser.parse_args()
 
     days = [
-        (1, [advent2025.day1_part1, advent2025.day1_part2]),
+        (1, "rust", [rs_advent2025.day1_part1, rs_advent2025.day1_part2]),
+        (1, "python", [py_advent2025.day1.part1, py_advent2025.day1.part2]),
     ]
 
-    for day, funcs in days:
+    for day, language, funcs in days:
         for part,func in enumerate(funcs):
             with timer():
                 result = func(f"{args.data}/day{day}.txt")
-                print(f"Day {day} part {part+1} result {result}", end=" ")
+                print(f"Day {day} part {part+1} result {result} using language {language}", end=" ")
 
 if __name__ == "__main__":
     main()

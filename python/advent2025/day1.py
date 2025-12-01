@@ -2,14 +2,49 @@ import pathlib
 import collections
 
 def part1(f_path: pathlib.Path) -> int:
-    with open(f_path) as f:
-        l,r = zip(*[map(int,line.split()) for line in f])
-        diff_sums = sum([abs(l-r) for l,r in zip(sorted(l),sorted(r))])
-        return diff_sums
+    dial = 50
+    dial_max = 99
+    dial_span = dial_max + 1
+    score = 0
+
+    with open(f_path, 'r') as f:
+        for line in f:
+            d,m = line[0], int(line[1:])
+            m *= -1 if d == 'L' else 1
+
+            dial = (dial + m) % dial_span
+
+            if dial == 0:
+                score += 1
+
+    return score
 
 def part2(f_path: pathlib.Path) -> int:
-    with open(f_path) as f:
-        l,r = zip(*[map(int,line.split()) for line in f])
-        c = collections.Counter(r)
-        similarity_score = sum([c[l]*l for l in l])
-        return similarity_score
+    dial = 50
+    dial_max = 99
+    dial_span = dial_max + 1
+    score = 0
+
+    with open(f_path, 'r') as f:
+        for line in f:
+            d,m = line[0], int(line[1:])
+
+            # Count how many full spins we make, add to score, then update the magnitude to be less than a full spin
+            full_spins = m // dial_span
+            score += full_spins
+            m -= full_spins * dial_span
+            m *= -1 if d == 'L' else 1
+
+            # Check if the remaining movement causes us to pass the zero point in either direction
+            # need to be careful for when the dial is already at zero
+            new_dial = (dial + m) % dial_span
+            if new_dial == 0:
+                score += 1
+            elif ((d == 'R') and (new_dial < dial) and (dial != 0)):
+                score += 1
+            elif ((d == 'L') and (new_dial > dial) and (dial != 0)):
+                score += 1
+
+            dial = new_dial
+
+    return score
