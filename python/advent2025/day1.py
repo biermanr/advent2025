@@ -1,5 +1,4 @@
 import pathlib
-import collections
 
 def part1(f_path: pathlib.Path) -> int:
     dial = 50
