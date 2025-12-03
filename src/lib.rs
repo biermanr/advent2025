@@ -24,7 +24,7 @@ fn day2_part2(data_path: &str) -> PyResult<u128> {
 }
 
 #[pyfunction]
-fn day3_part1(data_path: &str) -> PyResult<u32> {
+fn day3_part1(data_path: &str) -> PyResult<u128> {
     Ok(days::day3::part1(Path::new(data_path)))
 }
 
