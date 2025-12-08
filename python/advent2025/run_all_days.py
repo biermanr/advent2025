@@ -29,6 +29,7 @@ def main():
         (6, "rust", [rs_advent2025.day6_part1, rs_advent2025.day6_part2]),
         (6, "python", [py_advent2025.day6.part1, py_advent2025.day6.part2]),
         (7, "rust", [rs_advent2025.day7_part1, rs_advent2025.day7_part2]),
+        (7, "python", [py_advent2025.day7.part1, py_advent2025.day7.part2]),
     ]
 
     for day, language, funcs in days:

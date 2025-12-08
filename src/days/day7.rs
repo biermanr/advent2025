@@ -1,50 +1,18 @@
 use std::path::Path;
-use std::collections::{HashSet, HashMap};
+use std::collections::HashMap;
 
-fn find_start(grid: &Vec<Vec<char>>) -> (usize, usize) {
-    let nrows = grid.len();
-    let ncols = grid[0].len();
-
-    // Find (x,y) of start 'S'
-    let mut sx = 0;
-    let mut sy = 0;
-    let mut found_s = false;
-    for x in 0..ncols {
-        for y in 0..nrows {
+fn find_start(grid: &Vec<Vec<char>>) -> Option<(usize, usize)> {
+    for x in 0..grid[0].len() {
+        for y in 0..grid.len() {
             if grid[y][x] == 'S' {
-                found_s = true;
-                sx = x;
-                sy = y;
+                return Some((x, y));
             }
         }
     }
-
-    if !found_s {
-        panic!("Didn't find S starting point!");
-    }
-    (sx, sy)
+    None
 }
 
-fn find_splitters(grid: &Vec<Vec<char>>, splitters: &mut HashSet<(usize, usize)>, x: usize, y: usize) {
-    if y >= grid.len()-1 { return }
-
-    if grid[y+1][x] == '.' {
-        find_splitters(grid, splitters, x, y+1);
-    } 
-    
-    if grid[y+1][x] == '^' && !splitters.contains(&(x,y)) {
-        splitters.insert((x,y));
-        if x > 0 {
-            find_splitters(grid, splitters, x-1, y+1);
-        }
-
-        if x <= grid[0].len()-1 {
-            find_splitters(grid, splitters, x+1, y+1);
-        }
-    }
-}
-
-fn count_paths(grid: &Vec<Vec<char>>, memo: &mut HashMap<(usize, usize), u128>, x: usize, y: usize) -> u128 {
+fn traverse(grid: &Vec<Vec<char>>, memo: &mut HashMap<(usize, usize), u128>, x: usize, y: usize) -> u128 {
     if  y >= grid.len()-1 {
         // Reached the bottom, this is one path
         1
@@ -53,34 +21,34 @@ fn count_paths(grid: &Vec<Vec<char>>, memo: &mut HashMap<(usize, usize), u128>, 
         if let Some(n_paths) = memo.get(&(x, y)) {
             *n_paths
         } else {
-            let left = if x > 0 { count_paths(grid, memo, x-1, y+1) } else { 0 };
-            let right = if x < grid[0].len()-1 { count_paths(grid, memo, x+1, y+1) } else { 0 };
+            let left = if x > 0 { traverse(grid, memo, x-1, y+1) } else { 0 };
+            let right = if x < grid[0].len()-1 { traverse(grid, memo, x+1, y+1) } else { 0 };
             memo.insert((x,y), left+right);
             left+right
         }
     } else {
         // Didn't hit splitter, return num paths after travelling downward
-        count_paths(grid, memo, x, y+1)
+        traverse(grid, memo, x, y+1)
     }
 }
 
 pub fn part1(data_path: &Path) -> u32 {
     let text = std::fs::read_to_string(data_path).unwrap();
     let grid: Vec<Vec<char>> = text.lines().map(|l| l.chars().collect()).collect();
-    let mut splitters: HashSet<(usize, usize)> = HashSet::new();
-    let (sx, sy) = find_start(&grid);
-    find_splitters(&grid, &mut splitters, sx, sy);
+    let (sx, sy) = find_start(&grid).unwrap();
+    let mut memo: HashMap<(usize, usize), u128> = HashMap::new();
 
-    splitters.len().try_into().unwrap()
+    traverse(&grid, &mut memo, sx, sy);
+    memo.len().try_into().unwrap()
 }
 
 pub fn part2(data_path: &Path) -> u128 {
     let text = std::fs::read_to_string(data_path).unwrap();
     let grid: Vec<Vec<char>> = text.lines().map(|l| l.chars().collect()).collect();
-    let (sx, sy) = find_start(&grid);
-
+    let (sx, sy) = find_start(&grid).unwrap();
     let mut memo: HashMap<(usize, usize), u128> = HashMap::new();
-    count_paths(&grid, &mut memo, sx, sy)
+
+    traverse(&grid, &mut memo, sx, sy)
 }
 
 // Test the run function
