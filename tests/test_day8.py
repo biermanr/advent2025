@@ -33,4 +33,4 @@ def test_py_day8_part1(ranges_path):
     assert advent2025.day8.part1(ranges_path) == 40
 
 def test_py_day8_part2(ranges_path):
-    assert advent2025.day8.part2(ranges_path) == 0
+    assert advent2025.day8.part2(ranges_path) == 25272
