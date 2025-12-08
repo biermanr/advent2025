@@ -29,11 +29,15 @@ impl Box {
 #[derive(Debug, PartialEq)]
 struct Circuit<'a> {
     boxes: HashSet<&'a Box>,
+    size: usize,
 }
 
 impl<'a> Circuit<'a> {
     fn new(b: &'a Box) -> Self {
-        Circuit { boxes: HashSet::from([b]) }
+        Circuit { 
+            boxes: HashSet::from([b]),
+            size: 1,
+        }
     }
 }
 
@@ -41,7 +45,7 @@ fn n_closest_pairs_of_boxes(boxes: &Vec<Box>, n: usize) -> Vec<(&Box, &Box)> {
     let mut closest_pairs = BinaryHeap::new();
     for (i1,b1) in boxes.iter().enumerate() {
         for (i2,b2) in boxes.iter().enumerate() {
-            if i1 == i2 { continue }
+            if i1 <= i2 { continue }
             let d = b1.dist(b2);
             if closest_pairs.len() < n {
                 closest_pairs.push((d, b1, b2));
@@ -65,26 +69,46 @@ pub fn part1(data_path: &Path) -> u32 {
     let text = std::fs::read_to_string(data_path).unwrap();
     let boxes: Vec<Box> = text.lines().map(|l| Box::new(l)).collect();
     let mut circuits: Vec<Circuit> = boxes.iter().map(Circuit::new).collect();
-    let pairs = n_closest_pairs_of_boxes(&boxes, 10);
+    let n = if boxes.len() <= 20 { 10 } else { 1000 };
+    let pairs = n_closest_pairs_of_boxes(&boxes, n);
+    println!("Number of pairs: {:?}", pairs.len());
 
     for (b1,b2) in pairs.iter().rev() {
 
-        // Careful, this has an issue if both boxes are already in the same circuit
         let c1_idx = circuits.iter().position(|c| c.boxes.contains(b1)).unwrap();
-        let c1 = circuits.remove(c1_idx);
 
+        if circuits[c1_idx].boxes.contains(b2) { continue } // b1 and b2 already in the same circuit, nothing to be done
+
+        let c1 = circuits.remove(c1_idx);
         let c2_idx = circuits.iter().position(|c| c.boxes.contains(b2)).unwrap();
         let c2 = circuits.remove(c2_idx);
 
-        if c1 != c2 {
-            println!("{:?} is in Circuit {:?}", b1, c1);
-            println!("{:?} is in Circuit {:?}", b2, c2);
-            let c = Circuit { boxes: c1.boxes.union(c2.boxes).collect() };
-            println!("Combined circuit is {:?}", c);
-        }
-        break;
+        let mut combined_boxes = HashSet::new(); // NOTE this is ugly, but I'm having trouble with .union()
+        for b in c1.boxes { combined_boxes.insert(b); }
+        for b in c2.boxes { combined_boxes.insert(b); }
+        let c = Circuit { boxes: combined_boxes, size: c1.size+c2.size };
+
+        circuits.push(c);
     }
-    0
+
+    let mut circuit_sizes: Vec<usize> = circuits.iter().map(|c| c.size).collect();
+    circuit_sizes.sort();
+    println!("{:?}", circuit_sizes);
+
+    let mut n_boxes = 0;
+    for cz in &circuit_sizes {
+        n_boxes += cz;
+    }
+    println!("{:?}", n_boxes);
+
+    let mut score = 1;
+    score *= circuit_sizes.pop().unwrap();
+    score *= circuit_sizes.pop().unwrap();
+    score *= circuit_sizes.pop().unwrap();
+
+    // 23700 is too low
+    //score.try_into().unwrap()
+    (score+1).try_into().unwrap() // wrong answer so println's output
 }
 
 pub fn part2(data_path: &Path) -> u32 {
