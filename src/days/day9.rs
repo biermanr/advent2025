@@ -26,45 +26,63 @@ pub fn part1(data_path: &Path) -> u64 {
     max_area.try_into().unwrap()
 }
 
-fn ok_tile(grid: &Vec<Vec<bool>>, x: usize, y: usize) -> bool {
-    if grid[y][x] {
-        return true;
-    }
+fn fill_grid(grid: &mut Vec<Vec<u8>>) {
+    // Grid value key
+    // - 0 means unsure
+    // - 1 means wall
+    // - 2 means inside
+    // - 3 means outside
+    for y in 0..grid.len() {
+        for x in 0..grid[0].len() {
+            if grid[y][x] != 0 { continue }
 
-    // Walk from x=0 to current x and count how many walls we hit. If even then we're outside 
-    let mut num_walls_hit = 0;
-    let mut in_wall = false;
-    for x_idx in 0..x {
-        if grid[y][x_idx] {
-            if in_wall { continue }
-            else { num_walls_hit += 1 }
-            in_wall = true;
-        } else {
-            in_wall = false;
+            if x > 0 && grid[y][x-1] != 1 { 
+                // Check if the left neighbor is any help
+                grid[y][x] = grid[y][x-1]
+            } else if y > 0 && grid[y-1][x] != 1 { 
+                // Check if the up neighbor is any help
+                grid[y][x] = grid[y-1][x] 
+            } else {
+                // Need to determine state ourselves
+                // Walk from x=0 to current x and count how many walls we hit. If even then we're outside 
+                let mut num_walls_hit_left = 0;
+                let mut in_wall = false;
+                for x_idx in 0..x {
+                    if grid[y][x_idx] == 1 {
+                        if in_wall { continue }
+                        else { num_walls_hit_left += 1 }
+                        in_wall = true;
+                    } else {
+                        in_wall = false;
+                    }
+                }
+
+                // Walk from current x to max x and count how many walls we hit. If even then we're outside 
+                let mut num_walls_hit_right = 0;
+                let mut in_wall = false;
+                for x_idx in x+1..grid[0].len() {
+                    if grid[y][x_idx] == 1 {
+                        if in_wall { continue }
+                        else { num_walls_hit_right += 1 }
+                        in_wall = true;
+                    } else {
+                        in_wall = false;
+                    }
+                }
+
+                if num_walls_hit_left % 2 == 1 && num_walls_hit_right % 2 == 1 { 
+                    grid[y][x] = 2;
+                } else {
+                    grid[y][x] = 3;
+                }
+            }
         }
     }
-    if num_walls_hit % 2 == 0 { return false }
-
-    // Walk from current x to max x and count how many walls we hit. If even then we're outside 
-    let mut num_walls_hit = 0;
-    let mut in_wall = false;
-    for x_idx in x+1..grid[0].len() {
-        if grid[y][x_idx] {
-            if in_wall { continue }
-            else { num_walls_hit += 1 }
-            in_wall = true;
-        } else {
-            in_wall = false;
-        }
-    }
-    if num_walls_hit % 2 == 0 { return false }
-
-    return true;
 }
 
-fn print_grid(grid: &Vec<Vec<bool>>) {
+fn print_grid(grid: &Vec<Vec<u8>>) {
     for row in grid {
-        let s: String = row.iter().map(|v| if *v {"#"} else {"."}).collect();
+        let s: String = row.iter().map(|&v| if v == 1 { "X" } else { if v == 2 { "O" } else { "." }}).collect();
         println!("{:?}",s);
     }
 }
@@ -81,7 +99,7 @@ pub fn part2(data_path: &Path) -> u64 {
 
     let max_x = red_tiles.iter().map(|(x,_)| x).max().unwrap();
     let max_y = red_tiles.iter().map(|(_,y)| y).max().unwrap();
-    let mut grid: Vec<Vec<bool>> = vec![vec![false; *max_x+1]; *max_y+1];
+    let mut grid: Vec<Vec<u8>> = vec![vec![0; *max_x+1]; *max_y+1];
 
     let (mut last_x, mut last_y) = red_tiles[0];
     for i in 1..red_tiles.len() {
@@ -90,12 +108,12 @@ pub fn part2(data_path: &Path) -> u64 {
         if curr_x == last_x {
             let (min_y, max_y) = (cmp::min(last_y, curr_y), cmp::max(last_y, curr_y));
             for y in min_y..max_y+1 {
-                grid[y][curr_x] = true;
+                grid[y][curr_x] = 1;
             }
         } else if curr_y == last_y {
             let (min_x, max_x) = (cmp::min(last_x, curr_x), cmp::max(last_x, curr_x));
             for x in min_x..max_x+1 {
-                grid[curr_y][x] = true;
+                grid[curr_y][x] = 1;
             }
         } else {
             println!("ERROR: Consecutive points should have been on the same line");
@@ -110,32 +128,50 @@ pub fn part2(data_path: &Path) -> u64 {
     if curr_x == last_x {
         let (min_y, max_y) = (cmp::min(last_y, curr_y), cmp::max(last_y, curr_y));
         for y in min_y..max_y+1 {
-            grid[y][curr_x] = true;
+            grid[y][curr_x] = 1;
         }
     } else if curr_y == last_y {
         let (min_x, max_x) = (cmp::min(last_x, curr_x), cmp::max(last_x, curr_x));
         for x in min_x..max_x+1 {
-            grid[curr_y][x] = true;
+            grid[curr_y][x] = 1;
         }
     } else {
         println!("ERROR: Consecutive points should have been on the same line");
     }
 
+    fill_grid(&mut grid);
+
+    let mut bad_regions: Vec<(usize, usize, usize, usize)> = vec![];
+
     let mut max_area = 0;
+    let n_pairs = (red_tiles.len()*(red_tiles.len()-1))/2;
+    let mut pair_i = 0;
     for i in 0..red_tiles.len()-1 {
         let (x1,y1) = red_tiles[i];
         for j in i+1..red_tiles.len() {
-            let (x2,y2) = red_tiles[j];
 
+            pair_i += 1;
+
+            let (x2,y2) = red_tiles[j];
             let area = (x1.abs_diff(x2)+1)*(y1.abs_diff(y2)+1);
             if area <= max_area { continue }
+
+            println!("Processing pair {} of {} current max area is {}", pair_i, n_pairs, max_area);
 
             let (min_x, max_x) = (cmp::min(x1, x2), cmp::max(x1, x2));
             let (min_y, max_y) = (cmp::min(y1, y2), cmp::max(y1, y2));
             let mut valid = true;
+
+            for (bad_min_x, bad_min_y, bad_max_x, bad_max_y) in &bad_regions {
+                if *bad_min_x >= min_x && *bad_min_y >= min_y && *bad_max_x <= max_x && *bad_max_y <= max_y {
+                    valid = false;
+                    break;
+                }
+            }
+
             for x in min_x..max_x {
                 for y in min_y..max_y {
-                    if !ok_tile(&grid, x, y){
+                    if grid[y][x] == 3 {
                         valid = false;
                         break;
                     }
@@ -145,6 +181,8 @@ pub fn part2(data_path: &Path) -> u64 {
 
             if valid {
                 max_area = area;
+            } else {
+                bad_regions.push((min_x, min_y, max_x, max_y));
             }
         }
     }
