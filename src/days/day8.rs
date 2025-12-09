@@ -1,117 +1,95 @@
 use std::path::Path;
 use std::collections::HashSet;
-use std::collections::BinaryHeap;
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct Box {
-    x: u32,
-    y: u32,
-    z: u32,
-}
-
-impl Box {
-    fn new(comma_s: &str) -> Self {
-        let mut split_s = comma_s.split(',');
-        Box {
-            x: split_s.next().expect("Not enough nums in comma string for X").parse().expect("Unable to parse to num for X"),
-            y: split_s.next().expect("Not enough nums in comma string for Y").parse().expect("Unable to parse to num for Y"),
-            z: split_s.next().expect("Not enough nums in comma string for Z").parse().expect("Unable to parse to num for Z"),
+fn n_closest_pairs_of_boxes(boxes: &Vec<(u64, u64, u64)>, n: usize) -> Vec<(u64, usize, usize)> {
+    let mut closest_pairs = vec![];
+    for i1 in 0..boxes.len()-1 {
+        let (x1,y1,z1) = boxes[i1];
+        for i2 in i1+1..boxes.len() {
+            let (x2,y2,z2) = boxes[i2];
+            let d = (x1.abs_diff(x2)*x1.abs_diff(x2)) + (y1.abs_diff(y2)*y1.abs_diff(y2)) + (z1.abs_diff(z2)*z1.abs_diff(z2));
+            closest_pairs.push((d, i1, i2));
         }
     }
 
-    fn dist(&self, other: &Box) -> u32 {
-        self.x.abs_diff(other.x)*self.x.abs_diff(other.x) +
-        self.y.abs_diff(other.y)*self.y.abs_diff(other.y) +
-        self.z.abs_diff(other.z)*self.z.abs_diff(other.z)
-    }
-}
-
-#[derive(Debug, PartialEq)]
-struct Circuit<'a> {
-    boxes: HashSet<&'a Box>,
-    size: usize,
-}
-
-impl<'a> Circuit<'a> {
-    fn new(b: &'a Box) -> Self {
-        Circuit { 
-            boxes: HashSet::from([b]),
-            size: 1,
-        }
-    }
-}
-
-fn n_closest_pairs_of_boxes(boxes: &Vec<Box>, n: usize) -> Vec<(&Box, &Box)> {
-    let mut closest_pairs = BinaryHeap::new();
-    for (i1,b1) in boxes.iter().enumerate() {
-        for (i2,b2) in boxes.iter().enumerate() {
-            if i1 <= i2 { continue }
-            let d = b1.dist(b2);
-            if closest_pairs.len() < n {
-                closest_pairs.push((d, b1, b2));
-            } else if let Some((largest_d,_,_)) = closest_pairs.peek() {
-                if d < *largest_d {
-                    closest_pairs.pop();
-                    closest_pairs.push((b1.dist(b2), b1, b2));
-                }
-            }
-        }
-    }
+    closest_pairs.sort();
 
     let mut pairs = vec![];
-    while let Some((_,b1,b2)) = closest_pairs.pop() {
-        pairs.push((b1, b2));
+
+    if n == 0 {
+        for (d,b1,b2) in closest_pairs {
+            pairs.push((d, b1, b2));
+        }
+    } else {
+        for (d,b1,b2) in closest_pairs {
+            if d == 46468 {
+                println!("{:?} and {:?} have d {}", boxes[b1], boxes[b2], d);
+            }
+            if pairs.len() < n {
+                pairs.push((d, b1, b2));
+            }
+        }
     }
     pairs
 }
 
-pub fn part1(data_path: &Path) -> u32 {
+pub fn part1(data_path: &Path) -> u64 {
     let text = std::fs::read_to_string(data_path).unwrap();
-    let boxes: Vec<Box> = text.lines().map(|l| Box::new(l)).collect();
-    let mut circuits: Vec<Circuit> = boxes.iter().map(Circuit::new).collect();
+    let mut boxes: Vec<(u64, u64, u64)> = vec![];
+    for line in text.lines() {
+        let mut s = line.trim().split(',');
+        let x = s.next().unwrap().parse().unwrap();
+        let y = s.next().unwrap().parse().unwrap();
+        let z = s.next().unwrap().parse().unwrap();
+        boxes.push((x,y,z));
+    }
     let n = if boxes.len() <= 20 { 10 } else { 1000 };
     let pairs = n_closest_pairs_of_boxes(&boxes, n);
+    let mut circuits: Vec<HashSet<usize>> = (0..boxes.len()).map(|i| HashSet::from([i])).collect();
     println!("Number of pairs: {:?}", pairs.len());
+    //println!("{:?}", pairs);
 
-    for (b1,b2) in pairs.iter().rev() {
+    for (_,i1,i2) in &pairs {
 
-        let c1_idx = circuits.iter().position(|c| c.boxes.contains(b1)).unwrap();
+        let c1_idx = circuits.iter().position(|c| c.contains(i1)).unwrap();
 
-        if circuits[c1_idx].boxes.contains(b2) { continue } // b1 and b2 already in the same circuit, nothing to be done
+
+        if circuits[c1_idx].contains(i2) { continue } // already in the same circuit, nothing to be done
 
         let c1 = circuits.remove(c1_idx);
-        let c2_idx = circuits.iter().position(|c| c.boxes.contains(b2)).unwrap();
+        let c2_idx = circuits.iter().position(|c| c.contains(i2)).unwrap();
         let c2 = circuits.remove(c2_idx);
 
         let mut combined_boxes = HashSet::new(); // NOTE this is ugly, but I'm having trouble with .union()
-        for b in c1.boxes { combined_boxes.insert(b); }
-        for b in c2.boxes { combined_boxes.insert(b); }
-        let c = Circuit { boxes: combined_boxes, size: c1.size+c2.size };
-
-        circuits.push(c);
+        for b in c1 { combined_boxes.insert(b); }
+        for b in c2 { combined_boxes.insert(b); }
+        circuits.push(combined_boxes);
     }
 
-    let mut circuit_sizes: Vec<usize> = circuits.iter().map(|c| c.size).collect();
+    // DEBUG MAKE SURE EVERY BOX IS IN EXACTLY ONE CIRCUIT 
+    for i in 0..boxes.len() {
+        let mut num_circuits = 0;
+        for c in &circuits {
+            if c.contains(&i) {
+                num_circuits += 1;
+            }
+        }
+        assert_eq!(num_circuits, 1);
+    }
+
+    let mut circuit_sizes: Vec<usize> = circuits.iter().map(|c| c.len()).collect();
     circuit_sizes.sort();
-    println!("{:?}", circuit_sizes);
-
-    let mut n_boxes = 0;
-    for cz in &circuit_sizes {
-        n_boxes += cz;
-    }
-    println!("{:?}", n_boxes);
 
     let mut score = 1;
     score *= circuit_sizes.pop().unwrap();
     score *= circuit_sizes.pop().unwrap();
     score *= circuit_sizes.pop().unwrap();
 
-    // 23700 is too low
-    //score.try_into().unwrap()
-    (score+1).try_into().unwrap() // wrong answer so println's output
+    // 23,700 is too low 175,500 is correct
+    score.try_into().unwrap()
 }
 
-pub fn part2(data_path: &Path) -> u32 {
+pub fn part2(data_path: &Path) -> u64 {
     let text = std::fs::read_to_string(data_path).unwrap();
     0
 }
@@ -167,6 +145,6 @@ mod tests {
     fn test_part2() {
         let (_d, _f, test_path) = create_test_file();
         let result = part2(&test_path);
-        assert_eq!(result, 1);
+        assert_eq!(result, 25272);
     }
 }

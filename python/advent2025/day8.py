@@ -4,7 +4,9 @@ def closest_n_pairs(boxes: list[list[int]], n: int) -> list[tuple[int, int, int]
     dists = []
     for i in range(len(boxes)-1):
         for j in range(i + 1, len(boxes)):
-            dist = sum((boxes[i][k] - boxes[j][k]) ** 2 for k in range(3))
+            x1, y1, z1 = boxes[i]
+            x2, y2, z2 = boxes[j]
+            dist = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2)
             dists.append((dist, i, j))
 
     if n == None:
