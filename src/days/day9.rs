@@ -80,11 +80,30 @@ fn fill_grid(grid: &mut Vec<Vec<u8>>) {
     }
 }
 
-fn print_grid(grid: &Vec<Vec<u8>>) {
-    for row in grid {
-        let s: String = row.iter().map(|&v| if v == 1 { "X" } else { if v == 2 { "O" } else { "." }}).collect();
-        println!("{:?}",s);
-    }
+fn get_bad_regions(grid: &Vec<Vec<u8>>) -> Vec<(usize, usize, usize, usize)>{
+    let mut bads: Vec<(usize, usize, usize, usize)> = vec![];
+
+    for y in 0..grid.len() {
+        let mut sx = 0;
+        let mut opening = false;
+        for x in 0..grid[0].len() {
+            if grid[y][x] == 3 && opening { 
+                continue;
+            } else if grid[y][x] == 3 && !opening {
+                sx = x;
+                opening = true;
+            } else if grid[y][x] != 3 && opening {
+                bads.push((sx, y, x-1, y));
+                opening = false;
+            } else if grid[y][x] != 3 && !opening {
+                continue;
+            }
+        }
+        if opening {
+            bads.push((sx, y, grid[0].len()-1, y));
+        }
+    } 
+    bads
 }
 
 pub fn part2(data_path: &Path) -> u64 {
@@ -141,29 +160,25 @@ pub fn part2(data_path: &Path) -> u64 {
 
     fill_grid(&mut grid);
 
-    let mut bad_regions: Vec<(usize, usize, usize, usize)> = vec![];
+    let bad_regions = get_bad_regions(&grid);
 
     let mut max_area = 0;
-    let n_pairs = (red_tiles.len()*(red_tiles.len()-1))/2;
-    let mut pair_i = 0;
     for i in 0..red_tiles.len()-1 {
         let (x1,y1) = red_tiles[i];
         for j in i+1..red_tiles.len() {
-
-            pair_i += 1;
 
             let (x2,y2) = red_tiles[j];
             let area = (x1.abs_diff(x2)+1)*(y1.abs_diff(y2)+1);
             if area <= max_area { continue }
 
-            println!("Processing pair {} of {} current max area is {}", pair_i, n_pairs, max_area);
-
             let (min_x, max_x) = (cmp::min(x1, x2), cmp::max(x1, x2));
             let (min_y, max_y) = (cmp::min(y1, y2), cmp::max(y1, y2));
             let mut valid = true;
 
-            for (bad_min_x, bad_min_y, bad_max_x, bad_max_y) in &bad_regions {
-                if *bad_min_x >= min_x && *bad_min_y >= min_y && *bad_max_x <= max_x && *bad_max_y <= max_y {
+            for (bad_min_x, bad_min_y, bad_max_x, _) in &bad_regions {
+                let bad_y_contained = *bad_min_y >= min_y && *bad_min_y <= max_y;
+                let bad_x_contained = (*bad_min_x >= min_x && *bad_min_x <= max_x) || (*bad_max_x >= min_x && *bad_max_x <= max_x);
+                if bad_y_contained && bad_x_contained {
                     valid = false;
                     break;
                 }
@@ -181,8 +196,6 @@ pub fn part2(data_path: &Path) -> u64 {
 
             if valid {
                 max_area = area;
-            } else {
-                bad_regions.push((min_x, min_y, max_x, max_y));
             }
         }
     }
