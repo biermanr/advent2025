@@ -100,5 +100,6 @@ fn advent2025(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(day7_part1, m)?)?;
     m.add_function(wrap_pyfunction!(day7_part2, m)?)?;
     m.add_function(wrap_pyfunction!(day8_part1, m)?)?;
+    m.add_function(wrap_pyfunction!(day8_part2, m)?)?;
     Ok(())
 }

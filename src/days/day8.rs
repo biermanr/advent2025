@@ -22,9 +22,6 @@ fn n_closest_pairs_of_boxes(boxes: &Vec<(u64, u64, u64)>, n: usize) -> Vec<(u64,
         }
     } else {
         for (d,b1,b2) in closest_pairs {
-            if d == 46468 {
-                println!("{:?} and {:?} have d {}", boxes[b1], boxes[b2], d);
-            }
             if pairs.len() < n {
                 pairs.push((d, b1, b2));
             }
@@ -46,8 +43,6 @@ pub fn part1(data_path: &Path) -> u64 {
     let n = if boxes.len() <= 20 { 10 } else { 1000 };
     let pairs = n_closest_pairs_of_boxes(&boxes, n);
     let mut circuits: Vec<HashSet<usize>> = (0..boxes.len()).map(|i| HashSet::from([i])).collect();
-    println!("Number of pairs: {:?}", pairs.len());
-    //println!("{:?}", pairs);
 
     for (_,i1,i2) in &pairs {
 
@@ -66,17 +61,6 @@ pub fn part1(data_path: &Path) -> u64 {
         circuits.push(combined_boxes);
     }
 
-    // DEBUG MAKE SURE EVERY BOX IS IN EXACTLY ONE CIRCUIT 
-    for i in 0..boxes.len() {
-        let mut num_circuits = 0;
-        for c in &circuits {
-            if c.contains(&i) {
-                num_circuits += 1;
-            }
-        }
-        assert_eq!(num_circuits, 1);
-    }
-
     let mut circuit_sizes: Vec<usize> = circuits.iter().map(|c| c.len()).collect();
     circuit_sizes.sort();
 
@@ -85,12 +69,42 @@ pub fn part1(data_path: &Path) -> u64 {
     score *= circuit_sizes.pop().unwrap();
     score *= circuit_sizes.pop().unwrap();
 
-    // 23,700 is too low 175,500 is correct
     score.try_into().unwrap()
 }
 
 pub fn part2(data_path: &Path) -> u64 {
     let text = std::fs::read_to_string(data_path).unwrap();
+    let mut boxes: Vec<(u64, u64, u64)> = vec![];
+    for line in text.lines() {
+        let mut s = line.trim().split(',');
+        let x = s.next().unwrap().parse().unwrap();
+        let y = s.next().unwrap().parse().unwrap();
+        let z = s.next().unwrap().parse().unwrap();
+        boxes.push((x,y,z));
+    }
+    let pairs = n_closest_pairs_of_boxes(&boxes, 0);
+    let mut circuits: Vec<HashSet<usize>> = (0..boxes.len()).map(|i| HashSet::from([i])).collect();
+
+    for (_,i1,i2) in &pairs {
+
+        let c1_idx = circuits.iter().position(|c| c.contains(i1)).unwrap();
+
+
+        if circuits[c1_idx].contains(i2) { continue } // already in the same circuit, nothing to be done
+
+        let c1 = circuits.remove(c1_idx);
+        let c2_idx = circuits.iter().position(|c| c.contains(i2)).unwrap();
+        let c2 = circuits.remove(c2_idx);
+
+        let mut combined_boxes = HashSet::new(); // NOTE this is ugly, but I'm having trouble with .union()
+        for b in c1 { combined_boxes.insert(b); }
+        for b in c2 { combined_boxes.insert(b); }
+        circuits.push(combined_boxes);
+
+        if circuits.len() == 1 {
+            return (boxes[*i1].0 * boxes[*i2].0).try_into().unwrap();
+        }
+    }
     0
 }
 

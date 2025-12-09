@@ -30,7 +30,7 @@ def main():
         (6, "python", [py_advent2025.day6.part1, py_advent2025.day6.part2]),
         (7, "rust", [rs_advent2025.day7_part1, rs_advent2025.day7_part2]),
         (7, "python", [py_advent2025.day7.part1, py_advent2025.day7.part2]),
-        (8, "rust", [rs_advent2025.day8_part1]),
+        (8, "rust", [rs_advent2025.day8_part1, rs_advent2025.day8_part2]),
         (8, "python", [py_advent2025.day8.part1, py_advent2025.day8.part2]),
     ]
 
