@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::collections::HashSet;
+use std::collections::{VecDeque, HashSet};
 
 fn parse_comma_sep_nums(token: &str) -> Vec<u32> {
     let mut token_iter = token.chars();
@@ -43,19 +43,30 @@ fn parse_line(l: &str) -> (u32, Vec<u32>, Vec<u32>) {
 
 pub fn part1(data_path: &Path) -> u32 {
     let text = std::fs::read_to_string(data_path).unwrap();
+    let mut score = 0;
+
     for line in text.lines() {
         let (target_state, buttons, _jolts) = parse_line(line);
 
-        let mut light_state = 0;
-        let mut prior_states: HashSet<u32> = HashSet::from([0]);
-        let mut stack: Vec<(u32, u32)> = vec![(0,0)];
+        let mut queue: VecDeque<(u32, u32)> = VecDeque::from([(0, 0)]);
+        let mut prior_states: HashSet<u32> = HashSet::new();
 
-        while light_state != target_state {
-            break;
+        while let Some((current_state, num_presses)) = queue.pop_back() {
+            if current_state == target_state {
+                score += num_presses;
+                break;
+            } else {
+                for button in &buttons {
+                    let new_state = current_state^button;
+                    if ! prior_states.contains(&new_state){
+                        queue.push_front((current_state^button, num_presses+1));
+                        prior_states.insert(new_state);
+                    }
+                }
+            }
         }
-
     }
-    0
+    score
 }
 
 
