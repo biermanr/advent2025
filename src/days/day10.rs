@@ -78,7 +78,7 @@ pub fn part2(data_path: &Path) -> usize {
     let mut score = 0;
 
     for line in text.lines() {
-        let (_target_state, _bit_buttons, buttons, target_jolts) = parse_line(line);
+        let (_target_state, _bit_buttons, mut buttons, target_jolts) = parse_line(line);
 
         // We know the min number of button presses is the max jolt of the target joltages,
         // since we can't do any better than that. But there are just so many states that we
@@ -111,41 +111,30 @@ pub fn part2(data_path: &Path) -> usize {
         // this with the next largest button? Magnitude is the number of jolt registers that are increased. If so then
         // this would be very fast but I'm guessing a greedy approach doesn't work here
 
+        buttons.sort_by(|a, b| b.len().cmp(&a.len()));
+        let mut current_joltage = vec![0; target_jolts.len()];
 
-        let mut queue: VecDeque<(Vec<usize>, usize)> = VecDeque::new();
-        queue.push_front((vec![0; target_jolts.len()], 0));
-
-        let mut prior_states: HashSet<Vec<usize>> = HashSet::new();
-
-        while let Some((current_jolts, num_presses)) = queue.pop_back() {
-            println!("{:?} vs {:?} with {} num presses", current_jolts, target_jolts, num_presses);
-            if current_jolts == target_jolts {
-                score += num_presses;
+        for b in &buttons {
+            if current_joltage == target_jolts {
+                println!("THE GREEDY APPROACH WORKS!");
                 break;
-            } else {
-                for button in &buttons {
-                    let mut too_large = false;
-                    let mut new_jolts = vec![];
-                    for (i,current_jolt) in current_jolts.iter().enumerate() {
-                        if button.contains(&i) {
-                            let new_jolt = current_jolt+1;
-                            if new_jolt > target_jolts[i] {
-                                too_large = true;
-                                break
-                            }
-                            new_jolts.push(new_jolt);
-                        } else {
-                            new_jolts.push(*current_jolt);
-                        }
-                    }
-
-                    if !too_large && !prior_states.contains(&new_jolts){
-                        queue.push_front((new_jolts.clone(), num_presses+1));
-                        prior_states.insert(new_jolts);
-                    }
-                }
             }
+
+            let mut max_presses: Vec<usize> = vec![]; 
+            for (i,jolts) in target_jolts.iter().enumerate() {
+                if b.contains(&i) {
+                    max_presses.push(jolts-current_joltage[i]);
+                } 
+            }
+            max_presses.sort();
+            let max_allowed_presses = max_presses[0];
+            
+            for i in b {
+                current_joltage[*i] += max_allowed_presses;
+            }
+            score += max_allowed_presses;
         }
+
     }
     score
 }
