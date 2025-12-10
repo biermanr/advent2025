@@ -109,14 +109,17 @@ pub fn part2(data_path: &Path) -> usize {
         //
         // Can I greedily choose the button with the highest magnitude as many times as possible and then continue to do
         // this with the next largest button? Magnitude is the number of jolt registers that are increased. If so then
-        // this would be very fast but I'm guessing a greedy approach doesn't work here
+        // this would be very fast but I'm guessing a greedy approach doesn't work here. Yeah, tested it and greedy fails.
+        //
+        // The next idea I have is to check if the target joltage is on the same "line" as the current joltage. These
+        // lines are the button vectors. This will allow me to press the "last" button any number of necessary times
+        // but it will still be slow to adjust the current joltage until this last "straightaway" step is possible.
 
         buttons.sort_by(|a, b| b.len().cmp(&a.len()));
         let mut current_joltage = vec![0; target_jolts.len()];
 
         for b in &buttons {
             if current_joltage == target_jolts {
-                println!("THE GREEDY APPROACH WORKS!");
                 break;
             }
 
