@@ -78,8 +78,39 @@ pub fn part2(data_path: &Path) -> usize {
     let mut score = 0;
 
     for line in text.lines() {
-        println!("Working on {}", line);
         let (_target_state, _bit_buttons, buttons, target_jolts) = parse_line(line);
+
+        // We know the min number of button presses is the max jolt of the target joltages,
+        // since we can't do any better than that. But there are just so many states that we
+        // can be in. Maybe we store the number of presses for each button.
+        //
+        // Let's say the min presses is 50 and we have 4 buttons, then we could have many many sets of presses:
+        // - {50,  0,  0,  0}
+        // - {49,  1,  0,  0}
+        // - {48,  2,  0,  0}
+        // - ...
+        // - { 0,  0,  0, 50}
+        //
+        // How many ways are there to distribute 50 presses to 4 different buttons?
+        // Thankfully the order doesn't matter.
+        //
+        // Another way of thinking about this is as mathematical vectors where the target joltages T is a point
+        // in N dimensional space where N is the number of joltage registers (also the number of startup lights)
+        // and we're starting at the origin in this N dim space. Each button is also an N dim vector of offsets that
+        // we can apply. So it's an equation P_{1}B_{1} + P_{2}B_{2} + ... + P_{n}_B{n} = T where P is
+        // the vector of the number of presses and B is the button vector. We want to minimize ||P||. Oh we can write this
+        // as a vector times a matrix equals a vector BP = T where B is NxN, P is Nx1, T is Nx1. B is a binary matrix since
+        // each button only offsets each axis by either 0 or 1. There are going to be multiple answers for P but again we
+        // want to minimize ||P|| Can I do this with linear programming? Actually I don't want to use another crate
+        //
+        // It's easy to quickly figure out the maximum number of times each button can be pressed without passing the target
+        // then I'll at least have some idea of the number of combinations. Ok this is ~1e12 for the first data row. Way
+        // too large.
+        //
+        // Can I greedily choose the button with the highest magnitude as many times as possible and then continue to do
+        // this with the next largest button? Magnitude is the number of jolt registers that are increased. If so then
+        // this would be very fast but I'm guessing a greedy approach doesn't work here
+
 
         let mut queue: VecDeque<(Vec<usize>, usize)> = VecDeque::new();
         queue.push_front((vec![0; target_jolts.len()], 0));
@@ -87,7 +118,7 @@ pub fn part2(data_path: &Path) -> usize {
         let mut prior_states: HashSet<Vec<usize>> = HashSet::new();
 
         while let Some((current_jolts, num_presses)) = queue.pop_back() {
-            println!("{:?} vs {:?}", current_jolts, target_jolts);
+            println!("{:?} vs {:?} with {} num presses", current_jolts, target_jolts, num_presses);
             if current_jolts == target_jolts {
                 score += num_presses;
                 break;
