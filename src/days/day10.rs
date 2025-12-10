@@ -1,53 +1,59 @@
 use std::path::Path;
+use std::collections::HashSet;
 
-fn parse_line(l: &str) {
+fn parse_comma_sep_nums(token: &str) -> Vec<u32> {
+    let mut token_iter = token.chars();
+    token_iter.next(); //remove start
+    token_iter.next_back(); // remove end
+    let stripped_t = token_iter.as_str();
 
-    let mut lights = 0;
-    let mut num_lights = 0;
-    //let mut buttons = vec![];
-    //let mut joltages = vec![];
+    stripped_t.split(',').filter_map(|c| c.parse().ok()).collect()
+}
+
+fn parse_line(l: &str) -> (u32, Vec<u32>, Vec<u32>) {
 
     let mut tokens = l.trim().split(' ');
     let light_token = tokens.next().unwrap();
     let jolts_token = tokens.next_back().unwrap();
 
-    for token in l.trim().split(' ') {
-        let mut token_iter = token.chars();
-        let start = token_iter.next(); //remove start
-        token_iter.next_back(); // remove end
-        let stripped_t = token_iter.as_str();
+    // Parse the lights portion of the input
+    let s_lights:String = light_token.chars()
+                                     .filter(|c| *c == '.' || *c == '#')
+                                     .map(|c| if c == '.' {'0'} else {'1'}).collect();
 
-        match start {
-            Some('[') => {
-                let s_lights:String = stripped_t.chars()
-                                                .filter(|c| *c == '.' || *c == '#')
-                                                .map(|c| if c == '.' {'0'} else {'1'}).collect();
+    let lights = u32::from_str_radix(&s_lights, 2).expect("Not a binary number!");
 
-                num_lights = s_lights.len();
-                lights = u16::from_str_radix(&s_lights, 2).expect("Not a binary number!");
-            },
-            Some('(') => {
-                let s_buttons:Vec<u8> = stripped_t.split(',')
-                                                   .filter_map(|c| c.parse().ok())
-                                                   .collect();
+    // Parse the joltages
+    let jolts = parse_comma_sep_nums(jolts_token);
 
-                println!("Button {} has nums {:?}", token, s_buttons);
+    // Parse the buttons
+    let mut buttons: Vec<u32> = vec![];
+    let num_lights: u32 = s_lights.len().try_into().unwrap();
+    for token in tokens {
+        let toggled_light_idxs = parse_comma_sep_nums(token);
+        let toggled:u32 = toggled_light_idxs.iter()
+                                        .map(|idx| 2_u32.pow(num_lights.abs_diff(*idx+1)))
+                                        .sum::<u32>();
 
-            },
-            Some('{') => {
-                //[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-                println!("Token {} is JOLTAGE", token);
-            },
-            Some(_) => println!("ERROR, UNEXPECTED start for token {}", token),
-            None => println!("ERROR, NO TOKEN!")
-        }
+        buttons.push(toggled);
     }
+
+    (lights, buttons, jolts)
 }
 
 pub fn part1(data_path: &Path) -> u32 {
     let text = std::fs::read_to_string(data_path).unwrap();
     for line in text.lines() {
-        parse_line(line);
+        let (target_state, buttons, _jolts) = parse_line(line);
+
+        let mut light_state = 0;
+        let mut prior_states: HashSet<u32> = HashSet::from([0]);
+        let mut stack: Vec<(u32, u32)> = vec![(0,0)];
+
+        while light_state != target_state {
+            break;
+        }
+
     }
     0
 }
