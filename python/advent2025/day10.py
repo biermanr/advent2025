@@ -24,11 +24,12 @@ def parse_line(line: str) -> tuple[np.ndarray, np.ndarray]:
 def solve_lp(b_matrix: np.ndarray, target_joltage: np.ndarray) -> int:
     num_vars = b_matrix.shape[0]
     c = np.ones(num_vars)
+    integrality = np.ones(num_vars, dtype=int)
 
     A_eq = b_matrix.T
     b_eq = target_joltage
 
-    res = linprog(c, A_eq=A_eq, b_eq=b_eq)
+    res = linprog(c, A_eq=A_eq, b_eq=b_eq, integrality=integrality)
 
     if res.success:
         return int(round(res.x.sum()))
