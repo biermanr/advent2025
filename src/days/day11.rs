@@ -15,31 +15,47 @@ fn parse_connections(data: &str) -> HashMap<&str, HashSet<&str>> {
     connections
 }
 
-fn traverse(grid: &Vec<Vec<char>>, memo: &mut HashMap<(usize, usize), u128>, x: usize, y: usize) -> u128 {
-    if  y >= grid.len()-1 {
-        // Reached the bottom, this is one path
+fn count_paths<'a>(
+    current: &'a str, 
+    connections: &HashMap<&'a str, HashSet<&'a str>>, 
+    memo: &mut HashMap<&'a str, u32>, 
+    prior_visits: HashSet<&'a str>,
+) -> u32 {
+    if current == "out" {
+        // We've found a path!
         1
-    } else if grid[y+1][x] == '^' {
-        // Hit a splitter, return num paths left plus num paths right
-        if let Some(n_paths) = memo.get(&(x, y)) {
-            *n_paths
-        } else {
-            let left = if x > 0 { traverse(grid, memo, x-1, y+1) } else { 0 };
-            let right = if x < grid[0].len()-1 { traverse(grid, memo, x+1, y+1) } else { 0 };
-            memo.insert((x,y), left+right);
-            left+right
-        }
+    } else if prior_visits.contains(&current) {
+        // This path has hit the same node again so there's a loop no solution(?)
+        0
+    } else if !connections.contains_key(&current) {
+        // We've hit a dead end, no downstreams to try
+        0
     } else {
-        // Didn't hit splitter, return num paths after travelling downward
-        traverse(grid, memo, x, y+1)
+        // Add the current node to the list of prior visited (ugly implementation)
+        let mut updated_prior_visits: HashSet<&str> = HashSet::from([current]);
+        for prior_device in prior_visits {
+            updated_prior_visits.insert(prior_device);
+        }
+
+        // Recur by trying all the downstream connections
+        let mut num_paths = 0;
+        if let Some(downstreams) = connections.get(&current) {
+            for downstream in downstreams {
+                num_paths += count_paths(downstream, connections, memo, updated_prior_visits.clone()); //wasteful to clone here
+            }
+        }
+        memo.insert(current, num_paths);
+        num_paths
     }
 }
 
 pub fn part1(data_path: &Path) -> u32 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
-    println!("{:?}", connections);
-    0
+    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    let score = count_paths("you", &connections, &mut memo, priors);
+    score
 }
 
 // Test the run function

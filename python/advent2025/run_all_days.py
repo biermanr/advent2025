@@ -35,6 +35,7 @@ def main():
         #(9, "rust", [rs_advent2025.day9_part1, rs_advent2025.day9_part2]), # SLOW
         (10, "rust", [rs_advent2025.day10_part1]),
         (10, "python", [py_advent2025.day10.part2]),
+        (11, "rust", [rs_advent2025.day11_part1]),
     ]
 
     for day, language, funcs in days:
