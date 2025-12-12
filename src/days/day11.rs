@@ -16,108 +16,81 @@ fn parse_connections(data: &str) -> HashMap<&str, HashSet<&str>> {
 }
 
 fn count_paths<'a>(
-    current: &'a str, 
-    target: &'a str,
+    current_state: (&'a str, Vec<bool>),
+    must_visits: &Vec<&'a str>,
     connections: &HashMap<&'a str, HashSet<&'a str>>, 
-    memo: &mut HashMap<&'a str, u32>, 
-    prior_visits: HashSet<&'a str>,
+    memo: &mut HashMap<(&'a str, Vec<bool>), u32>, 
+    prior_states: HashSet<(&'a str, Vec<bool>)>,
 ) -> u32 {
-    if current == target {
-        // We've found a path!
+    if current_state.0 == "out" && current_state.1.iter().all(|&v| v) {
+        // We've found "out" AND we've hit all must visits so we've found a path
         1
-    } else if prior_visits.contains(&current) {
-        // This path has hit the same node again so there's a loop no solution(?)
-        0
-    } else if !connections.contains_key(&current) {
+    } else if !connections.contains_key(&current_state.0) {
         // We've hit a dead end, no downstreams to try
         0
+    } else if memo.contains_key(&current_state) {
+        // We already know how many paths stem from this state, no need to recurse
+        *memo.get(&current_state).unwrap()
     } else {
-        // Add the current node to the list of prior visited (ugly implementation)
-        let mut updated_prior_visits: HashSet<&str> = HashSet::from([current]);
-        for prior_device in prior_visits {
-            updated_prior_visits.insert(prior_device);
-        }
-
-        match memo.get(&current) {
-            Some(num_paths) => {
-                // Haven't been to this device on this walk, but have been here on a prior walk, we know how many downstream paths there are
-                *num_paths
-            },
-            None => {
-                // Recur by trying all the downstream connections
-                let mut num_paths = 0;
-                if let Some(downstreams) = connections.get(&current) {
-                    for downstream in downstreams {
-                        num_paths += count_paths(downstream, target, connections, memo, updated_prior_visits.clone()); //wasteful to clone here
-                    }
-                }
-                memo.insert(current, num_paths);
-                num_paths
+        // Add the current state to the list of prior visited (ugly implementation)
+        let mut updated_visit_info = current_state.1.clone();
+        for (i, must_visit) in must_visits.iter().enumerate() {
+            if current_state.0 == *must_visit {
+                updated_visit_info[i] = true;
             }
         }
+
+        let mut updated_current_state = current_state.clone();
+        updated_current_state.1 = updated_visit_info.clone();
+
+        let mut updated_prior_states = prior_states.clone();
+        updated_prior_states.insert(updated_current_state.clone());
+
+        // Recurse by trying all the downstream connections
+        let mut num_paths = 0;
+        if let Some(downstreams) = connections.get(&current_state.0) {
+            for downstream in downstreams {
+                let mut next_state = current_state.clone();
+                next_state.0 = downstream;
+                next_state.1 = updated_visit_info.clone();
+
+                // Don't revisit prior states we've tried to avoid infinit loops
+                if !updated_prior_states.contains(&next_state) {
+                    num_paths += count_paths(next_state, must_visits, connections, memo, updated_prior_states.clone());
+                }
+            }
+        }
+        memo.insert(updated_current_state, num_paths);
+        num_paths
     }
 }
 
 pub fn part1(data_path: &Path) -> u32 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
-    let must_visits:HashSet<&str> = HashSet::new();
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let score = count_paths("you", "out", &connections, &mut memo, priors);
-    score
+
+    let mut memo: HashMap<(&str, Vec<bool>), u32> = HashMap::new();
+    let priors: HashSet<(&str, Vec<bool>)> = HashSet::new();
+
+    let current_state: (&str, Vec<bool>) = ("you", vec![true]);
+    let must_visits: Vec<&str> = vec![];
+
+    count_paths(current_state, &must_visits, &connections, &mut memo, priors)
 }
 
 pub fn part2(data_path: &Path) -> u32 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
-    let mut score = 0;
 
-    // This idea undercounts because it will miss paths that have to pass
-    // through the "out" device multiple times to pick up dac and fft.
-    // For example: the following would cause issues:
-    // svr --> out --> dac --> fft 
-    //          ^               |
-    //          |<------------- v
-    //
-    // Instead I think I need to memo on the "state" which is the current node AND 
-    // whether or not each of the "must visit" nodes has been found like (&str, bool, bool)
+    let mut memo: HashMap<(&str, Vec<bool>), u32> = HashMap::new();
+    let priors: HashSet<(&str, Vec<bool>)> = HashSet::new();
 
-    // svr --> dac
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["fft", "out"]);
-    let num_svr_to_dac = count_paths("svr", "dac", &connections, &mut memo, priors);
+    let must_visits: HashMap<&str, bool> = HashMap::new();
 
-    // dac --> fft
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["svr", "out"]);
-    let num_dac_to_fft = count_paths("dac", "fft", &connections, &mut memo, priors);
+    let current_state: (&str, Vec<bool>) = ("svr", vec![false, false]);
+    let must_visits: Vec<&str> = vec!["dac", "fft"];
 
-    // fft --> out
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["svr", "dac"]);
-    let num_fft_to_out = count_paths("fft", "out", &connections, &mut memo, priors);
-
-    score += num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
-
-    // svr --> fft
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["dac", "out"]);
-    let num_svr_to_fft = count_paths("svr", "fft", &connections, &mut memo, priors);
-
-    // fft --> dac
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["svr", "out"]);
-    let num_fft_to_dac = count_paths("fft", "dac", &connections, &mut memo, priors);
-
-    // dac --> out
-    let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::from(["svr", "fft"]);
-    let num_dac_to_out = count_paths("dac", "out", &connections, &mut memo, priors);
-
-    score += num_svr_to_fft * num_fft_to_dac * num_dac_to_out;
-
-    score
+    count_paths(current_state, &must_visits, &connections, &mut memo, priors)
 }
 
 // Test the run function
@@ -186,5 +159,39 @@ hhh: out";
         let (_d, _f, test_path) = create_test_file2();
         let result = part2(&test_path);
         assert_eq!(result, 2);
+    }
+
+    fn create_test_file2a() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        This was supposed to be the tricky situation that I was failing where
+        we pass by "out" once to collect "dac" and "fft" but then hit out again:
+            svr -> out ->  fft -> dac -> out
+
+        And made the code more complicated to handle this but it turns out the problem
+        input was nice and we never have "out" as an upstream such as "out: aaa bbb"
+        so I don't actually have to worry about this situation
+
+        Also similarly "svr" is never downstream such as "aaa: svr" so also don't have
+        to worry about whether or not we hit "svr" multiple times
+        */
+        let test_input = "\
+svr: out
+out: fft
+fft: dac
+dac: out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2a() {
+        let (_d, _f, test_path) = create_test_file2a();
+        let result = part2(&test_path);
+        assert_eq!(result, 1);
     }
 }
