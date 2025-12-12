@@ -104,12 +104,12 @@ fn day10_part2(data_path: &str) -> PyResult<usize> {
 }
 
 #[pyfunction]
-fn day11_part1(data_path: &str) -> PyResult<u32> {
+fn day11_part1(data_path: &str) -> PyResult<u128> {
     Ok(days::day11::part1(Path::new(data_path)))
 }
 
 #[pyfunction]
-fn day11_part2(data_path: &str) -> PyResult<u32> {
+fn day11_part2(data_path: &str) -> PyResult<u128> {
     Ok(days::day11::part2(Path::new(data_path)))
 }
 

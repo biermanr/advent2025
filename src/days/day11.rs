@@ -19,26 +19,11 @@ fn count_paths<'a>(
     current_state: (&'a str, Vec<bool>),
     must_visits: &Vec<&'a str>,
     connections: &HashMap<&'a str, HashSet<&'a str>>, 
-    memo: &mut HashMap<(&'a str, Vec<bool>), u32>, 
-    prior_states: HashSet<(&'a str, Vec<bool>)>,
-) -> u32 { 
-    // Update the visit states with the current device
-    let mut current_state = current_state;
-    let mut updated_visit_info = current_state.1.clone();
-    for (i, must_visit) in must_visits.iter().enumerate() {
-        if current_state.0 == *must_visit {
-            updated_visit_info[i] = true;
-        }
-    }
-    current_state.1 = updated_visit_info.clone();
-    println!("{:?}", current_state);
-    println!("Memo {:?}", memo);
-    println!("Prev {:?}", prior_states);
-    println!("");
-
-    if current_state.0 == "out" && current_state.1.iter().all(|&v| v) {
-        // We've found "out" AND we've hit all must visits so we've found a path
-        memo.insert(current_state, 1);
+    memo: &mut HashMap<&'a str, u128>, 
+    prior_visits: HashSet<&'a str>,
+) -> u128 {
+    if current == target {
+        // We've found a path!
         1
     } else if !connections.contains_key(&current_state.0) {
         // We've hit a dead end, no downstreams to try
@@ -80,30 +65,68 @@ fn count_paths<'a>(
     }
 }
 
-pub fn part1(data_path: &Path) -> u32 {
+pub fn part1(data_path: &Path) -> u128 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
-
-    let mut memo: HashMap<(&str, Vec<bool>), u32> = HashMap::new();
-    let priors: HashSet<(&str, Vec<bool>)> = HashSet::new();
-
-    let current_state: (&str, Vec<bool>) = ("you", vec![true]);
-    let must_visits: Vec<&str> = vec![];
-
-    count_paths(current_state, &must_visits, &connections, &mut memo, priors)
+    let must_visits:HashSet<&str> = HashSet::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    let avoids: HashSet<&str> = HashSet::new();
+    let score = count_paths("you", "out", &avoids, &connections, &mut memo, priors);
+    score
 }
 
-pub fn part2(data_path: &Path) -> u32 {
+pub fn part2(data_path: &Path) -> u128 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
 
-    let mut memo: HashMap<(&str, Vec<bool>), u32> = HashMap::new();
-    let priors: HashSet<(&str, Vec<bool>)> = HashSet::new();
+    // svr --> dac
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["fft", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_svr_to_dac = count_paths("svr", "dac", &avoids, &connections, &mut memo, priors);
 
-    let current_state: (&str, Vec<bool>) = ("svr", vec![false, false]);
-    let must_visits: Vec<&str> = vec!["dac", "fft"];
+    // dac --> fft
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_dac_to_fft = count_paths("dac", "fft", &avoids, &connections, &mut memo, priors);
 
-    count_paths(current_state, &must_visits, &connections, &mut memo, priors)
+    // fft --> out
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "dac"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_fft_to_out = count_paths("fft", "out", &avoids, &connections, &mut memo, priors);
+
+    score += num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
+
+    // svr --> fft
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["dac", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_svr_to_fft = count_paths("svr", "fft", &avoids, &connections, &mut memo, priors);
+
+    // fft --> dac
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_fft_to_dac = count_paths("fft", "dac", &avoids, &connections, &mut memo, priors);
+
+    // dac --> out
+    let mut memo: HashMap<&str, u128> = HashMap::new();
+    let priors: HashSet<&str> = HashSet::new();
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "fft"]);
+    let avoids: HashSet<&str> = HashSet::new();
+    let num_dac_to_out = count_paths("dac", "out", &avoids, &connections, &mut memo, priors);
+
+    score += num_svr_to_fft * num_fft_to_dac * num_dac_to_out;
+
+    score
 }
 
 // Test the run function
