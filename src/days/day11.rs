@@ -20,9 +20,9 @@ fn count_paths<'a>(
     target: &'a str,
     avoids: &HashSet<&'a str>,
     connections: &HashMap<&'a str, HashSet<&'a str>>, 
-    memo: &mut HashMap<&'a str, u32>, 
+    memo: &mut HashMap<&'a str, u128>, 
     prior_visits: HashSet<&'a str>,
-) -> u32 {
+) -> u128 {
     if current == target {
         // We've found a path!
         1
@@ -62,58 +62,64 @@ fn count_paths<'a>(
     }
 }
 
-pub fn part1(data_path: &Path) -> u32 {
+pub fn part1(data_path: &Path) -> u128 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
     let must_visits:HashSet<&str> = HashSet::new();
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
     let avoids: HashSet<&str> = HashSet::new();
     let score = count_paths("you", "out", &avoids, &connections, &mut memo, priors);
     score
 }
 
-pub fn part2(data_path: &Path) -> u32 {
+pub fn part2(data_path: &Path) -> u128 {
     let data = std::fs::read_to_string(data_path).unwrap();
     let connections = parse_connections(&data);
     let mut score = 0;
 
     // svr --> dac
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["fft", "out"]);
+    //let avoids: HashSet<&str> = HashSet::from(["fft", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_svr_to_dac = count_paths("svr", "dac", &avoids, &connections, &mut memo, priors);
 
     // dac --> fft
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_dac_to_fft = count_paths("dac", "fft", &avoids, &connections, &mut memo, priors);
 
     // fft --> out
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "dac"]);
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "dac"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_fft_to_out = count_paths("fft", "out", &avoids, &connections, &mut memo, priors);
 
     score += num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
 
     // svr --> fft
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["dac", "out"]);
+    //let avoids: HashSet<&str> = HashSet::from(["dac", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_svr_to_fft = count_paths("svr", "fft", &avoids, &connections, &mut memo, priors);
 
     // fft --> dac
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_fft_to_dac = count_paths("fft", "dac", &avoids, &connections, &mut memo, priors);
 
     // dac --> out
-    let mut memo: HashMap<&str, u32> = HashMap::new();
+    let mut memo: HashMap<&str, u128> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "fft"]);
+    //let avoids: HashSet<&str> = HashSet::from(["svr", "fft"]);
+    let avoids: HashSet<&str> = HashSet::new();
     let num_dac_to_out = count_paths("dac", "out", &avoids, &connections, &mut memo, priors);
 
     score += num_svr_to_fft * num_fft_to_dac * num_dac_to_out;
