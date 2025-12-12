@@ -21,9 +21,24 @@ fn count_paths<'a>(
     connections: &HashMap<&'a str, HashSet<&'a str>>, 
     memo: &mut HashMap<(&'a str, Vec<bool>), u32>, 
     prior_states: HashSet<(&'a str, Vec<bool>)>,
-) -> u32 {
+) -> u32 { 
+    // Update the visit states with the current device
+    let mut current_state = current_state;
+    let mut updated_visit_info = current_state.1.clone();
+    for (i, must_visit) in must_visits.iter().enumerate() {
+        if current_state.0 == *must_visit {
+            updated_visit_info[i] = true;
+        }
+    }
+    current_state.1 = updated_visit_info.clone();
+    println!("{:?}", current_state);
+    println!("Memo {:?}", memo);
+    println!("Prev {:?}", prior_states);
+    println!("");
+
     if current_state.0 == "out" && current_state.1.iter().all(|&v| v) {
         // We've found "out" AND we've hit all must visits so we've found a path
+        memo.insert(current_state, 1);
         1
     } else if !connections.contains_key(&current_state.0) {
         // We've hit a dead end, no downstreams to try
@@ -32,19 +47,9 @@ fn count_paths<'a>(
         // We already know how many paths stem from this state, no need to recurse
         *memo.get(&current_state).unwrap()
     } else {
-        // Add the current state to the list of prior visited (ugly implementation)
-        let mut updated_visit_info = current_state.1.clone();
-        for (i, must_visit) in must_visits.iter().enumerate() {
-            if current_state.0 == *must_visit {
-                updated_visit_info[i] = true;
-            }
-        }
-
-        let mut updated_current_state = current_state.clone();
-        updated_current_state.1 = updated_visit_info.clone();
 
         let mut updated_prior_states = prior_states.clone();
-        updated_prior_states.insert(updated_current_state.clone());
+        updated_prior_states.insert(current_state.clone());
 
         // Recurse by trying all the downstream connections
         let mut num_paths = 0;
@@ -54,13 +59,22 @@ fn count_paths<'a>(
                 next_state.0 = downstream;
                 next_state.1 = updated_visit_info.clone();
 
-                // Don't revisit prior states we've tried to avoid infinit loops
+                // If there's a memo value then just use it
+                if let Some(remembered_steps) = memo.get(&next_state) {
+                    num_paths += remembered_steps;
+                    continue;
+                }
+
+                // Don't revisit prior states we've tried. avoid infinite loops
                 if !updated_prior_states.contains(&next_state) {
                     num_paths += count_paths(next_state, must_visits, connections, memo, updated_prior_states.clone());
                 }
             }
         }
-        memo.insert(updated_current_state, num_paths);
+
+        if num_paths > 0 {
+            memo.insert(current_state, num_paths);
+        }
         num_paths
     }
 }
@@ -84,8 +98,6 @@ pub fn part2(data_path: &Path) -> u32 {
 
     let mut memo: HashMap<(&str, Vec<bool>), u32> = HashMap::new();
     let priors: HashSet<(&str, Vec<bool>)> = HashSet::new();
-
-    let must_visits: HashMap<&str, bool> = HashMap::new();
 
     let current_state: (&str, Vec<bool>) = ("svr", vec![false, false]);
     let must_visits: Vec<&str> = vec!["dac", "fft"];
@@ -223,13 +235,19 @@ dac: out";
 
     fn create_test_file2c() -> (tempfile::TempDir, File, PathBuf) {
         /* 
+        Should be 5 paths
+
+            -> aaa ----|
+            |   ^      v
+        svr -> bbb -> fft -> dac -> out
+            |   v      ^
+            -> ccc ----|
         */
         let test_input = "\
 svr: aaa bbb ccc
 aaa: fft
-bbb: fft
+bbb: fft aaa ccc
 ccc: fft
-aaa: bbb
 fft: dac
 dac: out";
         let temp_dir = tempdir().unwrap();
@@ -245,6 +263,98 @@ dac: out";
     fn test_part2c() {
         let (_d, _f, test_path) = create_test_file2c();
         let result = part2(&test_path);
-        assert_eq!(result, 4);
+        assert_eq!(result, 5);
+    }
+
+    fn create_test_file2d() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        Should be 6 paths:
+        * svr -> aaa -> fft -> dac -> out
+        * svr -> bbb -> fft -> dac -> out
+        * svr -> ccc -> fft -> dac -> out
+
+        * svr -> bbb -> aaa -> fft -> dac -> out
+        * svr -> ccc -> bbb -> fft -> dac -> out
+        * svr -> ccc -> bbb -> aaa -> fft -> dac -> out
+
+            -> aaa ----|
+            |   ^      v
+        svr -> bbb -> fft -> dac -> out
+            |   ^      ^      
+            -> ccc ----|      
+
+        */
+        let test_input = "\
+svr: aaa bbb ccc
+aaa: fft
+bbb: fft aaa
+ccc: bbb fft
+fft: dac
+dac: out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2d() {
+        let (_d, _f, test_path) = create_test_file2d();
+        let result = part2(&test_path);
+        assert_eq!(result, 6);
+    }
+
+    fn create_test_file2e() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        Should be 12 paths
+        * svr -> aaa -> fft -> dac -> out
+        * svr -> bbb -> fft -> dac -> out
+        * svr -> ccc -> fft -> dac -> out
+
+        * svr -> bbb -> aaa -> fft -> dac -> out
+        * svr -> ccc -> bbb -> fft -> dac -> out
+        * svr -> ccc -> bbb -> aaa -> fft -> dac -> out
+
+        * svr -> aaa -> fft -> dac -> aaa -> fft -> dac -> out
+        * svr -> bbb -> fft -> dac -> aaa -> fft -> dac -> out
+        * svr -> ccc -> fft -> dac -> aaa -> fft -> dac -> out
+
+        * svr -> bbb -> aaa -> fft -> dac -> aaa -> fft -> dac -> out
+        * svr -> ccc -> bbb -> fft -> dac -> aaa -> fft -> dac -> out
+        * svr -> ccc -> bbb -> aaa -> fft -> dac -> aaa -> fft -> dac -> out
+
+                |--------------
+                v             |
+            -> aaa ----|      |
+            |   ^      v      |
+        svr -> bbb -> fft -> dac -> out
+            |   ^      ^       
+            -> ccc ----|       
+
+        */
+        let test_input = "\
+svr: aaa bbb ccc
+aaa: fft
+bbb: fft aaa
+ccc: bbb fft
+fft: dac
+dac: aaa out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2e() {
+        let (_d, _f, test_path) = create_test_file2e();
+        let result = part2(&test_path);
+        assert_eq!(result, 12);
     }
 }
