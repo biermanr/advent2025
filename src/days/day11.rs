@@ -194,4 +194,57 @@ dac: out";
         let result = part2(&test_path);
         assert_eq!(result, 1);
     }
+
+    fn create_test_file2b() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        */
+        let test_input = "\
+svr: aaa bbb ccc
+aaa: fft
+bbb: fft
+ccc: fft
+fft: dac
+dac: out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2b() {
+        let (_d, _f, test_path) = create_test_file2b();
+        let result = part2(&test_path);
+        assert_eq!(result, 3);
+    }
+
+    fn create_test_file2c() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        */
+        let test_input = "\
+svr: aaa bbb ccc
+aaa: fft
+bbb: fft
+ccc: fft
+aaa: bbb
+fft: dac
+dac: out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2c() {
+        let (_d, _f, test_path) = create_test_file2c();
+        let result = part2(&test_path);
+        assert_eq!(result, 4);
+    }
 }
