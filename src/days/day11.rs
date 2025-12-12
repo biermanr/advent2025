@@ -23,7 +23,7 @@ fn count_paths<'a>(
 ) -> u128 {
     if current == target {
         // We've found a path!
-        1
+        return 1;
     } 
     
     match memo.get(&current) {
@@ -48,8 +48,7 @@ pub fn part1(data_path: &Path) -> u128 {
     let connections = parse_connections(&data);
     
     let mut memo: HashMap<&str, u128> = HashMap::new();
-    let score = count_paths("you", "out", &connections, &mut memo);
-    score
+    count_paths("you", "out", &connections, &mut memo)
 }
 
 pub fn part2(data_path: &Path) -> u128 {
@@ -68,7 +67,7 @@ pub fn part2(data_path: &Path) -> u128 {
     let mut memo: HashMap<&str, u128> = HashMap::new();
     let num_fft_to_out = count_paths("fft", "out", &connections, &mut memo);
 
-    score += num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
+    let mut score = num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
 
     // svr --> fft
     let mut memo: HashMap<&str, u128> = HashMap::new();
