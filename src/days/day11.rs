@@ -27,7 +27,7 @@ fn count_paths<'a>(
     } 
     
     match memo.get(&current) {
-        Some(num_paths) => { num_paths },
+        Some(num_paths) => { *num_paths },
         None => {
             // Recurse by trying all the downstream connections
             let mut num_paths = 0;
@@ -37,7 +37,7 @@ fn count_paths<'a>(
                 }
             }
 
-            memo.insert(current_state, num_paths);
+            memo.insert(current, num_paths);
             num_paths
         }
     }
