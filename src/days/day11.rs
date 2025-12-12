@@ -18,7 +18,6 @@ fn parse_connections(data: &str) -> HashMap<&str, HashSet<&str>> {
 fn count_paths<'a>(
     current: &'a str, 
     target: &'a str,
-    avoids: &HashSet<&'a str>,
     connections: &HashMap<&'a str, HashSet<&'a str>>, 
     memo: &mut HashMap<&'a str, u32>, 
     prior_visits: HashSet<&'a str>,
@@ -26,9 +25,6 @@ fn count_paths<'a>(
     if current == target {
         // We've found a path!
         1
-    } else if avoids.contains(&current) {
-        // Stop early on paths that hit a device we want to avoid
-        0
     } else if prior_visits.contains(&current) {
         // This path has hit the same node again so there's a loop no solution(?)
         0
@@ -52,7 +48,7 @@ fn count_paths<'a>(
                 let mut num_paths = 0;
                 if let Some(downstreams) = connections.get(&current) {
                     for downstream in downstreams {
-                        num_paths += count_paths(downstream, target, avoids, connections, memo, updated_prior_visits.clone()); //wasteful to clone here
+                        num_paths += count_paths(downstream, target, connections, memo, updated_prior_visits.clone()); //wasteful to clone here
                     }
                 }
                 memo.insert(current, num_paths);
@@ -68,8 +64,7 @@ pub fn part1(data_path: &Path) -> u32 {
     let must_visits:HashSet<&str> = HashSet::new();
     let mut memo: HashMap<&str, u32> = HashMap::new();
     let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::new();
-    let score = count_paths("you", "out", &avoids, &connections, &mut memo, priors);
+    let score = count_paths("you", "out", &connections, &mut memo, priors);
     score
 }
 
@@ -78,43 +73,47 @@ pub fn part2(data_path: &Path) -> u32 {
     let connections = parse_connections(&data);
     let mut score = 0;
 
+    // This idea undercounts because it will miss paths that have to pass
+    // through the "out" device multiple times to pick up dac and fft.
+    // For example: the following would cause issues:
+    // svr --> out --> dac --> fft 
+    //          ^               |
+    //          |<------------- v
+    //
+    // Instead I think I need to memo on the "state" which is the current node AND 
+    // whether or not each of the "must visit" nodes has been found like (&str, bool, bool)
+
     // svr --> dac
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["fft", "out"]);
-    let num_svr_to_dac = count_paths("svr", "dac", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["fft", "out"]);
+    let num_svr_to_dac = count_paths("svr", "dac", &connections, &mut memo, priors);
 
     // dac --> fft
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
-    let num_dac_to_fft = count_paths("dac", "fft", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let num_dac_to_fft = count_paths("dac", "fft", &connections, &mut memo, priors);
 
     // fft --> out
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "dac"]);
-    let num_fft_to_out = count_paths("fft", "out", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["svr", "dac"]);
+    let num_fft_to_out = count_paths("fft", "out", &connections, &mut memo, priors);
 
     score += num_svr_to_dac * num_dac_to_fft * num_fft_to_out;
 
     // svr --> fft
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["dac", "out"]);
-    let num_svr_to_fft = count_paths("svr", "fft", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["dac", "out"]);
+    let num_svr_to_fft = count_paths("svr", "fft", &connections, &mut memo, priors);
 
     // fft --> dac
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "out"]);
-    let num_fft_to_dac = count_paths("fft", "dac", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["svr", "out"]);
+    let num_fft_to_dac = count_paths("fft", "dac", &connections, &mut memo, priors);
 
     // dac --> out
     let mut memo: HashMap<&str, u32> = HashMap::new();
-    let priors: HashSet<&str> = HashSet::new();
-    let avoids: HashSet<&str> = HashSet::from(["svr", "fft"]);
-    let num_dac_to_out = count_paths("dac", "out", &avoids, &connections, &mut memo, priors);
+    let priors: HashSet<&str> = HashSet::from(["svr", "fft"]);
+    let num_dac_to_out = count_paths("dac", "out", &connections, &mut memo, priors);
 
     score += num_svr_to_fft * num_fft_to_dac * num_dac_to_out;
 
