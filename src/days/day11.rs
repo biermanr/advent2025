@@ -66,6 +66,7 @@ fn count_paths<'a>(
                 }
 
                 // Don't revisit prior states we've tried. avoid infinite loops
+                println!("Deciding whether or not to recurse through {:?} given priors {:?}", next_state, updated_prior_states);
                 if !updated_prior_states.contains(&next_state) {
                     num_paths += count_paths(next_state, must_visits, connections, memo, updated_prior_states.clone());
                 }
@@ -355,6 +356,41 @@ dac: aaa out";
     fn test_part2e() {
         let (_d, _f, test_path) = create_test_file2e();
         let result = part2(&test_path);
-        assert_eq!(result, 12);
+        assert_eq!(result, 12); // Seems like the current issue is filling the memo before counting all paths?
+    }
+
+    fn create_test_file2f() -> (tempfile::TempDir, File, PathBuf) {
+        /* 
+        Should be 2 paths
+        * svr -> aaa -> bbb -> fft -> dac -> out
+        * svr -> aaa -> bbb -> aaa -> bbb -> fft -> dac -> out
+
+                |------|       
+                v      |       
+        svr -> aaa -> bbb -> fft -> dac -> out
+
+        */
+        let test_input = "\
+svr: aaa
+aaa: bbb
+bbb: fft aaa
+fft: dac
+dac: out";
+        let temp_dir = tempdir().unwrap();
+        let f_path = temp_dir.path().join("test_input.txt");
+        let mut temp_file = File::create(f_path.clone()).unwrap();
+        write!(temp_file, "{}", test_input).unwrap();
+
+        // have to return dir and file so they don't go out of scope
+        (temp_dir, temp_file, f_path)
+    }
+
+    #[test]
+    fn test_part2f() {
+        let (_d, _f, test_path) = create_test_file2f();
+        let result = part2(&test_path);
+        assert_eq!(result, 2); 
+        // Problem is when I go aaa -> bbb -> aaa I stop because
+        // I've already been in this same state before
     }
 }
