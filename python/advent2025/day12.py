@@ -160,7 +160,7 @@ def _helper(p1_conf: Present, p2_conf: Present) -> Present:
 
     return best_present
 
-def best_paired_arrangement(p1: Present, p2: Present) -> Present:
+def best_paired_arrangement(p1: Present, p2: Present, d1: int, d2: int) -> Present:
     min_area = None
     best_present = None
 
@@ -168,6 +168,10 @@ def best_paired_arrangement(p1: Present, p2: Present) -> Present:
         for p2_conf in all_configurations(p2):
             joined_present = _helper(p1_conf, p2_conf)
             w, h = len(joined_present[0]), len(joined_present)
+            fits = (w <= d1 and h <= d2) or (w <= d2 and h <= d1)
+            if not fits:
+                continue
+
             if not min_area or w*h < min_area:
                 best_present = joined_present
                 min_area = w*h
@@ -175,12 +179,9 @@ def best_paired_arrangement(p1: Present, p2: Present) -> Present:
     return best_present
 
 def recur_helper(state, presents_to_add, d1, d2) -> bool:
-    w, h = len(state[0]), len(state)
-
-    fits = (w <= d1 and h <= d2) or (w <= d2 and h <= d1)
 
     # Base case, the present layout is too big
-    if not fits:
+    if not state:
         return False
 
     # Base case, we've added all the presents
@@ -191,7 +192,7 @@ def recur_helper(state, presents_to_add, d1, d2) -> bool:
 
         # Recurse one time: Update state and remove present from consideration
         recur_result = recur_helper(
-            best_paired_arrangement(state, p),
+            best_paired_arrangement(state, p, d1, d2),
             [q for j,q in enumerate(presents_to_add) if j != i],
             d1, d2
         )
