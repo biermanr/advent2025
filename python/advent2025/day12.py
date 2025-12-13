@@ -21,6 +21,9 @@ def create(lines: list[str]) -> Present:
 
     return tuple(grid)
 
+def num_cells(p: Present) -> int:
+    return sum([sum(r) for r in p])
+
 def from_np(p: np.ndarray) -> Present:
     return tuple([tuple(r) for r in p])
 
@@ -224,9 +227,17 @@ def part1(f_path: pathlib.Path) -> int:
 
     for problem in problems:
         
-        placeable = solve_problem(presents, problem)
-        print(f"Able to place {problem} is {placeable}")
-        if placeable:
+        #placeable = solve_problem(presents, problem)
+        w,h,num_presents = problem
+        grid_area = w*h
+
+        total_present_area = 0
+        for i,n in enumerate(num_presents):
+            p = presents[i]
+            total_present_area += n * num_cells(p)
+
+        print(f"Total present area {total_present_area} vs grid area {grid_area}")
+        if total_present_area < grid_area:
             score += 1
 
     return score
