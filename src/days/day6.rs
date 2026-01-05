@@ -2,12 +2,12 @@ use std::path::Path;
 
 pub fn part1(data_path: &Path) -> u128 {
     let text = std::fs::read_to_string(data_path).unwrap();
-    let mut grid: Vec<Vec<&str>> = text.lines().map(|l| l.trim().split_whitespace().collect()).collect();
+    let mut grid: Vec<Vec<&str>> = text.lines().map(|l| l.split_whitespace().collect()).collect();
     let ops = grid.pop().unwrap();
     let mut score = 0;
 
     for (problem,op) in ops.iter().enumerate() {
-        let mut solution = if *op == "*" { 1 } else { 0 };
+        let mut solution = u128::from(*op == "*");
 
         for row in &grid {
             if *op == "*" {
@@ -31,7 +31,7 @@ pub fn part2(data_path: &Path) -> u128 {
     let mut ends: Vec<usize> = vec![];
 
     let mut last_start = 0;
-    ops.push(ops_str.chars().nth(0).unwrap()); //First is always an op
+    ops.push(ops_str.chars().next().unwrap()); //First is always an op
     for i in 1..ops_str.len() {
         match ops_str.chars().nth(i) {
             None => {},
@@ -66,7 +66,7 @@ pub fn part2(data_path: &Path) -> u128 {
 
     let mut score = 0;
     for (op,problem) in ops.iter().zip(problems) {
-        let mut solution = if *op == '*' { 1 } else { 0 };
+        let mut solution = u128::from(*op == '*');
         for n in problem {
             if *op == '*' {
                 solution *= n;
@@ -98,7 +98,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)
@@ -108,13 +108,13 @@ mod tests {
     fn test_part1() {
         let (_d, _f, test_path) = create_test_file();
         let result = part1(&test_path);
-        assert_eq!(result, 4277556);
+        assert_eq!(result, 4_277_556);
     }
 
     #[test]
     fn test_part2() {
         let (_d, _f, test_path) = create_test_file();
         let result = part2(&test_path);
-        assert_eq!(result, 3263827);
+        assert_eq!(result, 3_263_827);
     }
 }

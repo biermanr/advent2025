@@ -23,7 +23,7 @@ pub fn part2(data_path: &Path) -> u128 {
 }
 
 fn score_battery_pack(batteries: &[u8], nth: u8) -> u128 {
-    if nth == 0 || batteries.len() == 0 {
+    if nth == 0 || batteries.is_empty() {
         return 0;
     }
 
@@ -38,8 +38,8 @@ fn score_battery_pack(batteries: &[u8], nth: u8) -> u128 {
         }
     }
 
-    let score = (max_val as u128)*10_u128.pow((nth-1).try_into().unwrap());
-    return score + score_battery_pack(&batteries[max_ind+1..], nth-1);
+    let score = u128::from(max_val)*10_u128.pow((nth-1).into());
+    score + score_battery_pack(&batteries[max_ind+1..], nth-1)
 }
 
 
@@ -61,7 +61,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)
@@ -78,7 +78,7 @@ mod tests {
     fn test_part2() {
         let (_d, _f, test_path) = create_test_file();
         let result = part2(&test_path);
-        assert_eq!(result, 3121910778619);
+        assert_eq!(result, 3_121_910_778_619);
     }
     
 }

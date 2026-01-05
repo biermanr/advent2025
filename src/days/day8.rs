@@ -12,7 +12,7 @@ fn n_closest_pairs_of_boxes(boxes: &Vec<(u64, u64, u64)>, n: usize) -> Vec<(u64,
         }
     }
 
-    closest_pairs.sort();
+    closest_pairs.sort_unstable();
 
     let mut pairs = vec![];
 
@@ -61,8 +61,8 @@ pub fn part1(data_path: &Path) -> u64 {
         circuits.push(combined_boxes);
     }
 
-    let mut circuit_sizes: Vec<usize> = circuits.iter().map(|c| c.len()).collect();
-    circuit_sizes.sort();
+    let mut circuit_sizes: Vec<usize> = circuits.iter().map(std::collections::HashSet::len).collect();
+    circuit_sizes.sort_unstable();
 
     let mut score = 1;
     score *= circuit_sizes.pop().unwrap();
@@ -142,7 +142,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)

@@ -119,7 +119,7 @@ pub fn part2(data_path: &Path) -> usize {
         let mut prior_states: HashSet<Vec<usize>> = HashSet::new();
 
         while let Some((current_jolts, num_presses)) = queue.pop_back() {
-            println!("{:?} vs {:?} with {} num presses", current_jolts, target_jolts, num_presses);
+            println!("{current_jolts:?} vs {target_jolts:?} with {num_presses} num presses");
             if current_jolts == target_jolts {
                 score += num_presses;
                 break;
@@ -169,19 +169,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
-
-        // have to return dir and file so they don't go out of scope
-        (temp_dir, temp_file, f_path)
-    }
-
-    fn custom_create_test_file() -> (tempfile::TempDir, File, PathBuf) {
-        let test_input = "\
-[..#.##] (0,1,3,4) (0,3,4) (0,5) (0,1,2) (3,5) (0,2,3,4) (2,3) {58,27,37,57,37,24}";
-        let temp_dir = tempdir().unwrap();
-        let f_path = temp_dir.path().join("test_input.txt");
-        let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)

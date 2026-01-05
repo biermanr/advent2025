@@ -38,10 +38,10 @@ fn fill_grid(grid: &mut Vec<Vec<u8>>) {
 
             if x > 0 && grid[y][x-1] != 1 { 
                 // Check if the left neighbor is any help
-                grid[y][x] = grid[y][x-1]
+                grid[y][x] = grid[y][x-1];
             } else if y > 0 && grid[y-1][x] != 1 { 
                 // Check if the up neighbor is any help
-                grid[y][x] = grid[y-1][x] 
+                grid[y][x] = grid[y-1][x]; 
             } else {
                 // Need to determine state ourselves
                 // Walk from x=0 to current x and count how many walls we hit. If even then we're outside 
@@ -126,12 +126,12 @@ pub fn part2(data_path: &Path) -> u64 {
 
         if curr_x == last_x {
             let (min_y, max_y) = (cmp::min(last_y, curr_y), cmp::max(last_y, curr_y));
-            for y in min_y..max_y+1 {
+            for y in min_y..=max_y {
                 grid[y][curr_x] = 1;
             }
         } else if curr_y == last_y {
             let (min_x, max_x) = (cmp::min(last_x, curr_x), cmp::max(last_x, curr_x));
-            for x in min_x..max_x+1 {
+            for x in min_x..=max_x {
                 grid[curr_y][x] = 1;
             }
         } else {
@@ -146,12 +146,12 @@ pub fn part2(data_path: &Path) -> u64 {
     let (curr_x, curr_y) = red_tiles[0];
     if curr_x == last_x {
         let (min_y, max_y) = (cmp::min(last_y, curr_y), cmp::max(last_y, curr_y));
-        for y in min_y..max_y+1 {
+        for y in min_y..=max_y {
             grid[y][curr_x] = 1;
         }
     } else if curr_y == last_y {
         let (min_x, max_x) = (cmp::min(last_x, curr_x), cmp::max(last_x, curr_x));
-        for x in min_x..max_x+1 {
+        for x in min_x..=max_x {
             grid[curr_y][x] = 1;
         }
     } else {
@@ -225,7 +225,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)

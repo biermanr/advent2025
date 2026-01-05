@@ -40,7 +40,7 @@ pub fn part2(data_path: &Path) -> u128 {
             let n_string = n.to_string();
 
             let mut passes = false;
-            for substring_len in 1..n_string.len()/2+1 {
+            for substring_len in 1..=(n_string.len() / 2) {
                 let max_repeats = n_string.len()/substring_len;
                 for num_repeats in 1..=max_repeats {
                     let substring = n_string[..substring_len].repeat(num_repeats);
@@ -75,7 +75,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)
@@ -85,13 +85,13 @@ mod tests {
     fn test_part1() {
         let (_d, _f, test_path) = create_test_file();
         let result = part1(&test_path);
-        assert_eq!(result, 1227775554);
+        assert_eq!(result, 1_227_775_554);
     }
 
     #[test]
     fn test_part2() {
         let (_d, _f, test_path) = create_test_file();
         let result = part2(&test_path);
-        assert_eq!(result, 4174379265);
+        assert_eq!(result, 4_174_379_265);
     }
 }

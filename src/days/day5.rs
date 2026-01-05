@@ -9,7 +9,7 @@ pub fn part1(data_path: &Path) -> u32 {
 
     for line in text.split('\n') {
         let line = line.trim();
-        if line.len() == 0 { continue }
+        if line.is_empty() { continue }
 
         if line.contains('-') {
             let mut split_range = line.split('-');
@@ -95,7 +95,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)

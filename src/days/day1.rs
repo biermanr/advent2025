@@ -12,7 +12,7 @@ pub fn part1(data_path: &Path) -> u32 {
 
     for line in text.lines() {
         let mut sign = 1;
-        if let Some(direction) = line.chars().nth(0) {
+        if let Some(direction) = line.chars().next() {
             if direction == 'L' {
                 sign = -1;
             }
@@ -45,7 +45,7 @@ pub fn part2(data_path: &Path) -> u32 {
 
     for line in text.lines() {
         let mut sign: i32 = 1;
-        if let Some(direction) = line.chars().nth(0) {
+        if let Some(direction) = line.chars().next() {
             if direction == 'L' {
                 sign = -1;
             }
@@ -57,7 +57,7 @@ pub fn part2(data_path: &Path) -> u32 {
         let full_spins = magnitude / dial_span;
         score += full_spins;
 
-        magnitude = magnitude-full_spins*dial_span;
+        magnitude -= full_spins*dial_span;
         let offset = sign*(magnitude as i32);
         
 
@@ -73,7 +73,7 @@ pub fn part2(data_path: &Path) -> u32 {
         }
         else if new_dial >= dial_span as i32 {
             score += 1;
-            new_dial = new_dial % (dial_span as i32);
+            new_dial %= dial_span as i32;
         }
         dial = new_dial;
     }
@@ -106,7 +106,7 @@ L82";
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)

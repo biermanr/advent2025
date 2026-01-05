@@ -40,7 +40,7 @@ pub fn part2(data_path: &Path) -> u32 {
             }
         }
 
-        if removable_positions.len() == 0 {
+        if removable_positions.is_empty() {
             break
         }
 
@@ -107,7 +107,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let f_path = temp_dir.path().join("test_input.txt");
         let mut temp_file = File::create(f_path.clone()).unwrap();
-        write!(temp_file, "{}", test_input).unwrap();
+        write!(temp_file, "{test_input}").unwrap();
 
         // have to return dir and file so they don't go out of scope
         (temp_dir, temp_file, f_path)
