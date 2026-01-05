@@ -29,7 +29,7 @@ fn parse_line(l: &str) -> (usize, Vec<usize>, Vec<Vec<usize>>, Vec<usize>) {
     // Parse the buttons
     let mut buttons: Vec<Vec<usize>> = vec![];
     let mut bit_buttons: Vec<usize> = vec![];
-    let num_lights: usize = s_lights.len().try_into().unwrap();
+    let num_lights = s_lights.len();
     for token in tokens {
         let toggled_light_idxs = parse_comma_sep_nums(token);
 
@@ -58,13 +58,13 @@ pub fn part1(data_path: &Path) -> usize {
             if current_state == target_state {
                 score += num_presses;
                 break;
-            } else {
-                for button in &buttons {
-                    let new_state = current_state^button;
-                    if ! prior_states.contains(&new_state){
-                        queue.push_front((new_state, num_presses+1));
-                        prior_states.insert(new_state);
-                    }
+            }
+
+            for button in &buttons {
+                let new_state = current_state^button;
+                if ! prior_states.contains(&new_state){
+                    queue.push_front((new_state, num_presses+1));
+                    prior_states.insert(new_state);
                 }
             }
         }

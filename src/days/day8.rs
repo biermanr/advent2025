@@ -5,9 +5,12 @@ fn n_closest_pairs_of_boxes(boxes: &Vec<(u64, u64, u64)>, n: usize) -> Vec<(u64,
     let mut closest_pairs = vec![];
     for i1 in 0..boxes.len()-1 {
         let (x1,y1,z1) = boxes[i1];
-        for i2 in i1+1..boxes.len() {
-            let (x2,y2,z2) = boxes[i2];
-            let d = (x1.abs_diff(x2)*x1.abs_diff(x2)) + (y1.abs_diff(y2)*y1.abs_diff(y2)) + (z1.abs_diff(z2)*z1.abs_diff(z2));
+        for (i2, b2) in boxes.iter().enumerate().skip(i1+1) {
+            let (x2,y2,z2) = b2;
+            let x_diff = x1.abs_diff(*x2);
+            let y_diff = y1.abs_diff(*y2); 
+            let z_diff = z1.abs_diff(*z2);
+            let d = x_diff.pow(2) + y_diff.pow(2) + z_diff.pow(2);
             closest_pairs.push((d, i1, i2));
         }
     }

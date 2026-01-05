@@ -63,7 +63,7 @@ fn fill_grid(grid: &mut Vec<Vec<u8>>) {
                 for x_idx in x+1..grid[0].len() {
                     if grid[y][x_idx] == 1 {
                         if in_wall { continue }
-                        else { num_walls_hit_right += 1 }
+                        num_walls_hit_right += 1;
                         in_wall = true;
                     } else {
                         in_wall = false;
