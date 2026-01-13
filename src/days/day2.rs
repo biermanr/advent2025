@@ -1,16 +1,32 @@
 use std::path::Path;
 
-pub fn part1(data_path: &Path) -> u128 {
+struct Range {
+    start: u128,
+    end: u128,
+}
+
+/// Read a file, parse ranges, and return vec of tuple of start, end
+fn get_ranges(data_path: &Path) -> Vec<Range>{
     let text = std::fs::read_to_string(data_path).unwrap();
-    let text = text.trim();
-    let mut score: u128 = 0;
 
-    for range in text.split(','){
-        let mut start_end = range.split('-');
-        let start: u128 = start_end.next().unwrap().parse().unwrap();
-        let end: u128 = start_end.next().unwrap().parse().unwrap();
+    text
+        .trim()
+        .split(',')
+        .filter_map(|range_str| {
+            let (start_str, end_str) = range_str.split_once('-')?;
+            let start = start_str.parse::<u128>().ok()?;
+            let end = end_str.parse::<u128>().ok()?;
+            Some(Range { start, end })
+        })
+        .collect()
+}
 
-        for n in start..=end {
+pub fn part1(data_path: &Path) -> u128 {
+    let ranges = get_ranges(data_path);
+    let mut score = 0;
+
+    for range in ranges{
+        for n in range.start..=range.end {
             let n_string = n.to_string();
             let num_digits = n_string.len();
             if num_digits % 2 == 1 {
@@ -26,17 +42,13 @@ pub fn part1(data_path: &Path) -> u128 {
 }
 
 pub fn part2(data_path: &Path) -> u128 {
-    let text = std::fs::read_to_string(data_path).unwrap();
-    let text = text.trim();
-    let mut score: u128 = 0;
+    let ranges = get_ranges(data_path);
+    let mut score = 0;
 
-    for range in text.split(','){
-        let mut start_end = range.split('-');
-        let start: u128 = start_end.next().unwrap().parse().unwrap();
-        let end: u128 = start_end.next().unwrap().parse().unwrap();
+    for range in ranges{
 
-        // Check if each substring can be repeated to match the full string?
-        for n in start..=end {
+        // Check if each substring can be repeated to match the full string
+        for n in range.start..=range.end {
             let n_string = n.to_string();
 
             let mut passes = false;
