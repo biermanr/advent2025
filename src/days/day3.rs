@@ -1,25 +1,15 @@
 use std::path::Path;
 
-pub fn part1(data_path: &Path) -> u128 {
+fn get_battery_banks(data_path: &Path) -> Vec<Vec<u8>> {
     let text = std::fs::read_to_string(data_path).unwrap();
-    let battery_banks: Vec<Vec<u8>> = text.lines().map(|line| line.trim().chars().map(|c| c.to_digit(10).unwrap() as u8).collect()).collect();
-    let mut score = 0;
 
-    for battery_pack in battery_banks {
-        score += score_battery_pack(&battery_pack, 2);
-    }
-    score
-}
-
-pub fn part2(data_path: &Path) -> u128 {
-    let text = std::fs::read_to_string(data_path).unwrap();
-    let battery_banks: Vec<Vec<u8>> = text.lines().map(|line| line.trim().chars().map(|c| c.to_digit(10).unwrap() as u8).collect()).collect();
-    let mut score: u128 = 0;
-
-    for battery_pack in battery_banks {
-        score += score_battery_pack(&battery_pack, 12);
-    }
-    score
+    text.lines()
+        .map(|l| l.trim()
+                  .chars()
+                  .map(|c| c.to_digit(10)
+                            .expect("not a number") as u8)
+                            .collect())
+        .collect()
 }
 
 fn score_battery_pack(batteries: &[u8], nth: u8) -> u128 {
@@ -41,6 +31,21 @@ fn score_battery_pack(batteries: &[u8], nth: u8) -> u128 {
     let score = u128::from(max_val)*10_u128.pow((nth-1).into());
     score + score_battery_pack(&batteries[max_ind+1..], nth-1)
 }
+
+pub fn part1(data_path: &Path) -> u128 {
+    get_battery_banks(data_path)
+        .iter()
+        .map(|battery_pack| score_battery_pack(battery_pack, 2))
+        .sum()
+}
+
+pub fn part2(data_path: &Path) -> u128 {
+    get_battery_banks(data_path)
+        .iter()
+        .map(|battery_pack| score_battery_pack(battery_pack, 12))
+        .sum()
+}
+
 
 
 // Test the run function
